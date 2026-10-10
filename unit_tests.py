@@ -27,3 +27,20 @@ print(User._fields)
 # {'id': <fields.IntegerField object at ..., 'name': <fields.StringField object at ...>}
 print(User._table_name) 
 # user
+
+# Base model testing
+class User(Model):
+    id = IntegerField(primary_key=True)
+    name = StringField(max_length=30)
+    count = IntegerField(default=0)
+    note = StringField(default=None)
+
+u = User(id=1, name='Darin')
+print(u.id, u.name, u.count, u.note)
+# 1 Darin 0 None
+# u = User(id='bad', name='Darin') # invalid type for id
+# throws error
+# u = User(nme='Darin') # mispelled field which does not exist
+# throws error
+# u = User(id=1) # missing 'name' with no default value
+# # throws error

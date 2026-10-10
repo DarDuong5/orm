@@ -1,4 +1,4 @@
-from fields import Field, IntegerField, StringField
+from fields import Field, _MISSING
 
 # to represent a model class factory (metaclass) 
 class ModelMeta(type):
@@ -21,5 +21,34 @@ class ModelMeta(type):
 
         return cls
 
+# to represent a base model
+class Model(metaclass=ModelMeta):
+    def __init__(self, **kwargs) -> None:
+        # scan and check if every provided field exists
+        for key in kwargs.keys():
+            if key not in self._fields:
+                raise AttributeError(f'{type(self).__name__!r} does not have a field named {key!r}')
 
-    
+        # scan the field dict
+        for name, field in self._fields.items():
+            # check if the field name is not provided and does not have a default value
+            if name not in kwargs and field.default is _MISSING:
+                raise ValueError(f'Missing required field {name!r}')
+            # triggers the field descriptor's __set__, which enables validation and storage
+            setattr(self, name, kwargs.get(name, field.default))
+
+    @classmethod
+    def get_table(cls):
+        ...
+
+    def save(self):
+        ...
+
+    def get(self):
+        ...
+
+    def update(self):
+        ...
+
+    def delete(self):
+        ...

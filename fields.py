@@ -1,11 +1,15 @@
 from typing import Any
 
+# means no default, value is required
+# used instead of None because None maps to NULL in SQL
+_MISSING = object()
+
 # to represent an explicit field 
 class Field:
     def __set_name__(self, owner, name) -> None:
         self.storage_name = name
 
-    def __init__(self, primary_key=False, nullable=True, default=None) -> None:
+    def __init__(self, primary_key=False, nullable=True, default=_MISSING) -> None:
         self.primary_key = primary_key
         self.nullable = nullable
         self.default = default
@@ -19,17 +23,29 @@ class Field:
         self.validate(value)
         instance.__dict__[self.storage_name] = value
 
+    # handles default values
     def validate(self, value) -> None:
+        # check if value is None and if the value is nullable
+        if value is None:
+            if self.nullable:
+                return
+            raise ValueError(f'{self.storage_name} is not nullable but got None')
+
+        # if not, then move onto checking the type
+        self._validate_type(value)
+
+    # handles checking the type
+    def _validate_type(self, value):
         ...
 
 # to represent an integer field
 class IntegerField(Field):
     sql_type = 'INTEGER'
 
-    def __init__(self, primary_key=False, nullable=True, default=None) -> None:
+    def __init__(self, primary_key=False, nullable=True, default=_MISSING) -> None:
         super().__init__(primary_key=primary_key, nullable=nullable, default=default)
             
-    def validate(self, value) -> None:
+    def _validate_type(self, value) -> None:
         if not isinstance(value, int):
             raise TypeError(f'{value!r} does not match to the type {self.sql_type}')   
 
@@ -37,11 +53,11 @@ class IntegerField(Field):
 class StringField(Field):
     sql_type = 'TEXT'
 
-    def __init__(self, max_length=None, primary_key=False, nullable=True, default=None) -> None:
+    def __init__(self, max_length=None, primary_key=False, nullable=True, default=_MISSING) -> None:
         super().__init__(primary_key=primary_key, nullable=nullable, default=default)
         self.max_length = max_length
 
-    def validate(self, value) -> None:
+    def _validate_type(self, value) -> None:
         if not isinstance(value, str):
             raise TypeError(f'{value!r} does not match to the type {self.sql_type}')
         if self.max_length is not None and len(value) > self.max_length:

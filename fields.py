@@ -1,5 +1,6 @@
 from typing import Any
 
+# to represent an explicit field 
 class Field:
     def __set_name__(self, owner, name) -> None:
         self.storage_name = name
@@ -21,6 +22,7 @@ class Field:
     def validate(self, value) -> None:
         ...
 
+# to represent an integer field
 class IntegerField(Field):
     sql_type = 'INTEGER'
 
@@ -31,6 +33,7 @@ class IntegerField(Field):
         if not isinstance(value, int):
             raise TypeError(f'{value!r} does not match to the type {self.sql_type}')   
 
+# to represent a string field
 class StringField(Field):
     sql_type = 'TEXT'
 
@@ -44,18 +47,5 @@ class StringField(Field):
         if self.max_length is not None and len(value) > self.max_length:
             raise ValueError(f'Length of value must be less than the given max_length:{self.max_length} given {value!r}')
 
-class Point:
-    name: str = StringField(max_length=10)
-    x: int = IntegerField()
-    y: int = IntegerField()
 
-primary = StringField(primary_key=True)
-print(primary.primary_key) # True
-
-p = Point.__new__(Point)
-p.name, p.x, p.y = 'A', 1, 2
-print(p.name, p.x, p.y) # A 1 2
-# p.name = 'Name Too Long' # throws error
-# p.x = 'Not an integer' # throws error
-# p.y = 'Also not an integer' # throws error
 

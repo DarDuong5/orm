@@ -1,0 +1,29 @@
+from fields import *
+from model import *
+
+# Field testing
+class Point:
+    name: str = StringField(max_length=10)
+    x: int = IntegerField()
+    y: int = IntegerField()
+
+primary = StringField(primary_key=True)
+print(primary.primary_key) # True
+
+p = Point.__new__(Point)
+p.name, p.x, p.y = 'A', 1, 2
+print(p.name, p.x, p.y) # A 1 2
+# p.name = 'Name Too Long' # throws error
+# p.x = 'Not an integer' # throws error
+# p.y = 'Also not an integer' # throws error
+
+# Model testing
+class User(metaclass=ModelMeta):
+    id = IntegerField(primary_key=True)
+    name = StringField(max_length=30)
+    non_field = 10
+
+print(User._fields) 
+# {'id': <fields.IntegerField object at ..., 'name': <fields.StringField object at ...>}
+print(User._table_name) 
+# user

@@ -44,3 +44,11 @@ print(u.id, u.name, u.count, u.note)
 # throws error
 # u = User(id=1) # missing 'name' with no default value
 # # throws error
+
+class User(Model):
+    id = IntegerField(primary_key=True)
+    name = StringField(max_length=30, nullable=False)
+    age = IntegerField(nullable=True)
+
+print(User.create_table())
+# CREATE TABLE user (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER)

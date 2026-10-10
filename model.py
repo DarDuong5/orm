@@ -37,6 +37,20 @@ class Model(metaclass=ModelMeta):
             # triggers the field descriptor's __set__, which enables validation and storage
             setattr(self, name, kwargs.get(name, field.default))
 
+    # returns the query to create a table using explicit fields
+    @classmethod
+    def create_table(cls):
+        columns = []
+        for name, field in cls._fields.items():
+            col = f'{name} {field.sql_type}'
+            if field.primary_key:
+                col += ' PRIMARY KEY'
+            if not field.nullable:
+                col += ' NOT NULL'
+            columns.append(col)
+        definitions = ', '.join(columns)
+        return f'CREATE TABLE {cls._table_name} ({definitions})'
+
     @classmethod
     def get_table(cls):
         ...

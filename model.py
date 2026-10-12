@@ -71,12 +71,15 @@ class Model(metaclass=ModelMeta):
     def _select(cls, primary_key) -> SQLStatement:
         columns = []
         primary = None
+
+        # find primary key
         for name, field in cls._fields.items():
             if field.primary_key:
                 primary = name
             columns.append(name)
         if primary is None:
             raise ValueError('No primary key')
+        
         sql_cmd = f'SELECT {', '.join(columns)} FROM {cls._table_name} WHERE {primary} = ?'
         return sql_cmd, (primary_key, )
 
@@ -87,9 +90,27 @@ class Model(metaclass=ModelMeta):
         return sql_cmd, ()
        
     # returns the data manipulation command to update data from a table
-    def _update(self):
-        ...
+    def _update(self, **fields) -> SQLStatement:
+        # scan given fields to see if any are not actual fields
+        for field in fields.keys():
+            if field not in self._fields:
+                raise ValueError(f'{field!r} is not a column in {self._table_name}')
+
+        # find the primary key
+        primary = None
+        for name, field in self._fields.items():
+            if field.primary_key:
+                primary = name
+        if primary is None:
+            raise ValueError('No primary key')
+
+        field_placeholders = ', '.join(f'{name} = ?' for name in fields)
+        sql_cmd = f'UPDATE {self._table_name} SET {field_placeholders} WHERE {primary} = ?'
+        primary_val = self.__dict__[primary]
+        
+        return sql_cmd, (*fields.values(), primary_val)
 
     # returns the data manipulation command to delete data from a table
     def _delete(self):
         ...
+

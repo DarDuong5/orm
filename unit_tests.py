@@ -50,9 +50,11 @@ class User(Model):
     name = StringField(max_length=30, nullable=False)
     age = IntegerField(nullable=True)
 
+# Testing table creation
 print(User._create_table())
 # CREATE TABLE user (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER)
 
+# Testing insert
 u = User(id=1, name='Darin', age=21)
 sql, values = u._insert()
 print(sql)
@@ -60,12 +62,28 @@ print(sql)
 print(values)
 # (1, 'Darin', 21)
 
+# Testing select single
 sql, params = User._select(1)
 print(sql)
 # SELECT id, name, age FROM user WHERE id = ?
 print(params)
 # (1,)
 
+# Testing select all
 sql = User._select_all()
 print(sql)
 # SELECT id, name, age FROM user
+
+# Testing update
+u = User(id=1, name='Darin', age=21)
+sql, vals = u._update(age=22)
+print(sql)
+# UPDATE user SET age = ? WHERE id = ?
+print(vals)
+# (22, 1)
+
+sql, vals = u._update(name='David', age=23)
+print(sql)
+# UPDATE user SET name = ?, age = ? WHERE id = ?
+print(vals)
+# ('David', 23, 1)

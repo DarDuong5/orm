@@ -37,9 +37,9 @@ class Model(metaclass=ModelMeta):
             # triggers the field descriptor's __set__, which enables validation and storage
             setattr(self, name, kwargs.get(name, field.default))
 
-    # returns the query to create a table using explicit fields
+    # returns the data definition command to create a table
     @classmethod
-    def create_table(cls):
+    def _create_table(cls) -> str:
         columns = []
         for name, field in cls._fields.items():
             col = f'{name} {field.sql_type}'
@@ -51,18 +51,25 @@ class Model(metaclass=ModelMeta):
         definitions = ', '.join(columns)
         return f'CREATE TABLE {cls._table_name} ({definitions})'
 
-    @classmethod
-    def get_table(cls):
+    # returns the data manipulation command to insert data 
+    def _insert(self) :
+        names = ', '.join(self._fields.keys())
+        placeholders = ', '.join('?' for _ in self._fields)
+        sql_cmd = f'INSERT INTO {self._table_name} ({names}) VALUES ({placeholders})'
+        values = tuple(getattr(self, name) for name in self._fields)
+        return sql_cmd, values
+
+    def _save(self):
         ...
 
-    def save(self):
+    # returns the data manipulation command to select data from a table
+    def _select(self):
         ...
 
-    def get(self):
+    # returns the data manipulation command to update data from a table
+    def _update(self):
         ...
 
-    def update(self):
-        ...
-
-    def delete(self):
+    # returns the data manipulation command to delete data from a table
+    def _delete(self):
         ...

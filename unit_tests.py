@@ -50,5 +50,12 @@ class User(Model):
     name = StringField(max_length=30, nullable=False)
     age = IntegerField(nullable=True)
 
-print(User.create_table())
+print(User._create_table())
 # CREATE TABLE user (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER)
+
+u = User(id=1, name='Darin', age=21)
+sql, values = u._insert()
+print(sql)
+# INSERT INTO user (id, name, age) VALUES (?, ?, ?)
+print(values)
+# (1, 'Darin', 21)

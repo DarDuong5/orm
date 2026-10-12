@@ -59,3 +59,13 @@ print(sql)
 # INSERT INTO user (id, name, age) VALUES (?, ?, ?)
 print(values)
 # (1, 'Darin', 21)
+
+sql, params = User._select(1)
+print(sql)
+# SELECT id, name, age FROM user WHERE id = ?
+print(params)
+# (1,)
+
+sql = User._select_all()
+print(sql)
+# SELECT id, name, age FROM user

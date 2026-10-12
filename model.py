@@ -1,4 +1,8 @@
+from typing import Any
+
 from fields import Field, _MISSING
+
+type SQLStatement = tuple[str, tuple[Any, ...]]
 
 # to represent a model class factory (metaclass) 
 class ModelMeta(type):
@@ -52,7 +56,7 @@ class Model(metaclass=ModelMeta):
         return f'CREATE TABLE {cls._table_name} ({definitions})'
 
     # returns the data manipulation command to insert data 
-    def _insert(self) :
+    def _insert(self) -> SQLStatement:
         names = ', '.join(self._fields.keys())
         placeholders = ', '.join('?' for _ in self._fields)
         sql_cmd = f'INSERT INTO {self._table_name} ({names}) VALUES ({placeholders})'
@@ -62,10 +66,26 @@ class Model(metaclass=ModelMeta):
     def _save(self):
         ...
 
-    # returns the data manipulation command to select data from a table
-    def _select(self):
-        ...
+    # returns the data manipulation command to select data with primary key from a table
+    @classmethod
+    def _select(cls, primary_key) -> SQLStatement:
+        columns = []
+        primary = None
+        for name, field in cls._fields.items():
+            if field.primary_key:
+                primary = name
+            columns.append(name)
+        if primary is None:
+            raise ValueError('No primary key')
+        sql_cmd = f'SELECT {', '.join(columns)} FROM {cls._table_name} WHERE {primary} = ?'
+        return sql_cmd, (primary_key, )
 
+    # returns the data manipulation command to select all data from a table
+    @classmethod
+    def _select_all(cls) -> SQLStatement:
+        sql_cmd = f'SELECT {', '.join(cls._fields.keys())} FROM {cls._table_name}'
+        return sql_cmd, ()
+       
     # returns the data manipulation command to update data from a table
     def _update(self):
         ...

@@ -17,11 +17,21 @@ class ModelMeta(type):
 
         # create the class
         cls = super().__new__(meta_cls, cls_name, bases, cls_dict)
-        
+
         # store the field dict on the class
         cls._fields = fields_dict
         # store table name
         cls._table_name = cls_name.lower()
+
+        # check for primary key (at least one field requires a primary key in the base model)
+        if all(field.primary_key is False for field in cls._fields.values()) and cls._fields:
+            raise ValueError(f'{cls._table_name!r} requires at least one primary key')
+
+        # store a primary key
+        for name, field in cls._fields.items():
+            if field.primary_key:
+                cls._pk = name
+                break
 
         return cls
 
@@ -69,18 +79,7 @@ class Model(metaclass=ModelMeta):
     # returns the data manipulation command to select data with primary key from a table
     @classmethod
     def _select(cls, primary_key) -> SQLStatement:
-        columns = []
-        primary = None
-
-        # find primary key
-        for name, field in cls._fields.items():
-            if field.primary_key:
-                primary = name
-            columns.append(name)
-        if primary is None:
-            raise ValueError('No primary key')
-        
-        sql_cmd = f'SELECT {', '.join(columns)} FROM {cls._table_name} WHERE {primary} = ?'
+        sql_cmd = f'SELECT {', '.join(cls._fields.keys())} FROM {cls._table_name} WHERE {cls._pk} = ?'
         return sql_cmd, (primary_key, )
 
     # returns the data manipulation command to select all data from a table
@@ -96,17 +95,9 @@ class Model(metaclass=ModelMeta):
             if field not in self._fields:
                 raise ValueError(f'{field!r} is not a column in {self._table_name}')
 
-        # find the primary key
-        primary = None
-        for name, field in self._fields.items():
-            if field.primary_key:
-                primary = name
-        if primary is None:
-            raise ValueError('No primary key')
-
         field_placeholders = ', '.join(f'{name} = ?' for name in fields)
-        sql_cmd = f'UPDATE {self._table_name} SET {field_placeholders} WHERE {primary} = ?'
-        primary_val = self.__dict__[primary]
+        sql_cmd = f'UPDATE {self._table_name} SET {field_placeholders} WHERE {self._pk} = ?'
+        primary_val = self.__dict__[self._pk]
         
         return sql_cmd, (*fields.values(), primary_val)
 

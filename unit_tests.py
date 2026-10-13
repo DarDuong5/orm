@@ -27,6 +27,7 @@ print(User._fields)
 # {'id': <fields.IntegerField object at ..., 'name': <fields.StringField object at ...>}
 print(User._table_name) 
 # user
+print(User._pk)
 
 # Base model testing
 class User(Model):
@@ -70,9 +71,11 @@ print(params)
 # (1,)
 
 # Testing select all
-sql = User._select_all()
+sql, params = User._select_all()
 print(sql)
 # SELECT id, name, age FROM user
+print(params)
+# ()
 
 # Testing update
 u = User(id=1, name='Darin', age=21)
@@ -87,3 +90,13 @@ print(sql)
 # UPDATE user SET name = ?, age = ? WHERE id = ?
 print(vals)
 # ('David', 23, 1)
+
+# Testing primary key requirement
+# class User(Model):
+#     id = IntegerField(primary_key=False)
+#     name = StringField(max_length=30, nullable=False)
+#     age = IntegerField(nullable=True)
+
+# u = User(id=1, name='Darin', age=21)
+# ValueError: 'user' requires at least one primary key
+

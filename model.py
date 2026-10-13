@@ -108,6 +108,7 @@ class Model(metaclass=ModelMeta):
         return sql_cmd, (*fields.values(), primary_val)
 
     # returns the data manipulation command to delete data from a table
-    def _delete(self):
-        ...
+    def _delete(self) -> SQLStatement:
+        sql_cmd = f'DELETE FROM {self._table_name} WHERE {self._pk} = ?'
+        return sql_cmd, (self.__dict__[self._pk], )
 

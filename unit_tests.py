@@ -104,3 +104,11 @@ print(vals)
 # u = User(id=1, name='Darin', age=21)
 # ValueError: 'user' requires at least one primary key
 
+# testing delete
+u = User(id=1, name='Darin', age=21)
+sql, vals = u._delete()
+print(sql)
+# DELETE FROM user WHERE id = ?
+print(vals)
+# (1,)
+

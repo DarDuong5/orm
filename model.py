@@ -23,15 +23,14 @@ class ModelMeta(type):
         # store table name
         cls._table_name = cls_name.lower()
 
-        # check for primary key (at least one field requires a primary key in the base model)
-        if all(field.primary_key is False for field in cls._fields.values()) and cls._fields:
-            raise ValueError(f'{cls._table_name!r} requires at least one primary key')
-
-        # store a primary key
-        for name, field in cls._fields.items():
-            if field.primary_key:
-                cls._pk = name
-                break
+        # ensure there's exactly one primary key (composite keys coming soon)
+        if cls._fields:
+            primary_keys = [name for name, field in cls._fields.items() if field.primary_key]
+            if len(primary_keys) != 1:
+                raise ValueError(f'{cls._table_name!r} requires at exactly one primary key given {len(primary_keys)}')
+            
+             # store the primary key
+            cls._pk = primary_keys[0]
 
         return cls
 
@@ -90,10 +89,17 @@ class Model(metaclass=ModelMeta):
        
     # returns the data manipulation command to update data from a table
     def _update(self, **fields) -> SQLStatement:
+        if not fields:
+            raise ValueError('No fields provided to update')
+
         # scan given fields to see if any are not actual fields
         for field in fields.keys():
             if field not in self._fields:
                 raise ValueError(f'{field!r} is not a column in {self._table_name}')
+
+        # validate value before setting
+        for name, value in fields.items():
+            self._fields[name].validate(value)
 
         field_placeholders = ', '.join(f'{name} = ?' for name in fields)
         sql_cmd = f'UPDATE {self._table_name} SET {field_placeholders} WHERE {self._pk} = ?'

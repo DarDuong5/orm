@@ -28,6 +28,7 @@ print(User._fields)
 print(User._table_name) 
 # user
 print(User._pk)
+# id
 
 # Base model testing
 class User(Model):
@@ -90,6 +91,9 @@ print(sql)
 # UPDATE user SET name = ?, age = ? WHERE id = ?
 print(vals)
 # ('David', 23, 1)
+
+# sql, vals = u._update(name='David', age='invalid age')
+# TypeError: 'invalid age' does not match to the type INTEGER
 
 # Testing primary key requirement
 # class User(Model):

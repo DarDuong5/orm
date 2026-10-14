@@ -53,7 +53,7 @@ class User(Model):
     age = IntegerField(nullable=True)
 
 # Testing table creation
-print(User.create_table())
+# print(User.create_table())
 # CREATE TABLE user (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER)
 
 # Testing insert

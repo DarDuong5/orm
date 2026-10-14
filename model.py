@@ -1,4 +1,5 @@
 from typing import Any
+import sqlite3
 
 from fields import Field, _MISSING
 
@@ -36,6 +37,8 @@ class ModelMeta(type):
 
 # to represent a base model
 class Model(metaclass=ModelMeta):
+    _connection = None
+
     def __init__(self, **kwargs) -> None:
         # scan and check if every provided field exists
         for key in kwargs.keys():
@@ -50,9 +53,22 @@ class Model(metaclass=ModelMeta):
             # triggers the field descriptor's __set__, which enables validation and storage
             setattr(self, name, kwargs.get(name, field.default))
 
+    # opens the connection and stores it
+    @classmethod
+    def connect(cls, db_path) -> None:
+        cls._connection = sqlite3.connect(db_path)
+
+    # gets a cursor, executes, and commits to database
+    @classmethod
+    def create_table(cls) -> None:
+        with cls._connection as conn:
+            cursor = conn.cursor()
+            cursor.execute(cls._create_table_sql())
+            conn.commit()
+
     # returns the data definition command to create a table
     @classmethod
-    def _create_table(cls) -> str:
+    def _create_table_sql(cls) -> str:
         columns = []
         for name, field in cls._fields.items():
             col = f'{name} {field.sql_type}'
@@ -62,7 +78,7 @@ class Model(metaclass=ModelMeta):
                 col += ' NOT NULL'
             columns.append(col)
         definitions = ', '.join(columns)
-        return f'CREATE TABLE {cls._table_name} ({definitions})'
+        return f'CREATE TABLE IF NOT EXISTS {cls._table_name} ({definitions})'
 
     # returns the data manipulation command to insert data 
     def _insert(self) -> SQLStatement:

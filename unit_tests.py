@@ -53,7 +53,7 @@ class User(Model):
     age = IntegerField(nullable=True)
 
 # Testing table creation
-print(User._create_table())
+print(User.create_table())
 # CREATE TABLE user (id INTEGER PRIMARY KEY, name TEXT NOT NULL, age INTEGER)
 
 # Testing insert
@@ -111,4 +111,17 @@ print(sql)
 # DELETE FROM user WHERE id = ?
 print(vals)
 # (1,)
+
+# testing sqlite3 - creating table
+Model.connect(':memory:')
+
+class User(Model):
+    id = IntegerField(primary_key=True)
+    name = StringField(max_length=30)
+print(User._connection)
+User.create_table()
+
+cursor = Model._connection.cursor()
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+print(cursor.fetchall())
 

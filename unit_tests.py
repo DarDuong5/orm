@@ -188,7 +188,29 @@ def test_select_sql_generation() -> None:
     assert values == ()
 
 def test_update_sql_generation() -> None:
-    ...
+    point = TestPoint(name='A', x=1, y=2)
+    point_sql_cmd, values = point._update(name='B', x=2)
+    assert point_sql_cmd == 'UPDATE testpoint SET name = ?, x = ? WHERE name = ?'
+    assert values == ('B', 2, 'A')
+
+    user = TestUser(id=1, name='Darin', age=21)
+    user_sql_cmd, values = user._update(note='likes space')
+    assert user_sql_cmd == 'UPDATE testuser SET note = ? WHERE id = ?'
+    assert values == ('likes space', 1)
+
+    # invalid keys
+    try:
+        point_sql_cmd, values = point._update(nonexistent_key='I do not exist')
+        assert False, 'Expected ValueError but got none'
+    except ValueError:
+        pass
+
+    try:
+        user_sql_cmd, values = user._update(nonexistent_key='I do not exist')
+        assert False, 'Expected ValueError but got none'
+    except ValueError:
+        pass
+
 
 def test_delete_sql_generation() -> None:
     ...

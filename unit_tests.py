@@ -198,7 +198,7 @@ def test_update_sql_generation() -> None:
     assert user_sql_cmd == 'UPDATE testuser SET note = ? WHERE id = ?'
     assert values == ('likes space', 1)
 
-    # invalid keys
+    # invalid fields
     try:
         point_sql_cmd, values = point._update(nonexistent_key='I do not exist')
         assert False, 'Expected ValueError but got none'
@@ -207,6 +207,32 @@ def test_update_sql_generation() -> None:
 
     try:
         user_sql_cmd, values = user._update(nonexistent_key='I do not exist')
+        assert False, 'Expected ValueError but got none'
+    except ValueError:
+        pass
+
+    # invalid types
+    try:
+        point_sql_cmd, values = point._update(x='I am an int, not a string!')
+        assert False, 'Expected TypeError but got none'
+    except TypeError:
+        pass
+
+    try:
+        user_sql_cmd, values = user._update(age='I am an int, not a string!')
+        assert False, 'Expected TypeError but got none'
+    except TypeError:
+        pass
+
+    # no fields passed in
+    try:
+        point_sql_cmd, values = point._update()
+        assert False, 'Expected ValueError but got none'
+    except ValueError:
+        pass
+
+    try:
+        user_sql_cmd, values = user._update()
         assert False, 'Expected ValueError but got none'
     except ValueError:
         pass

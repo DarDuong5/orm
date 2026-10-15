@@ -211,9 +211,16 @@ def test_update_sql_generation() -> None:
     except ValueError:
         pass
 
-
 def test_delete_sql_generation() -> None:
-    ...
+    point = TestPoint(name='A', x=1, y=2)
+    point_sql_cmd, values = point._delete()
+    assert point_sql_cmd == 'DELETE FROM testpoint WHERE name = ?'
+    assert values == ('A',)
+
+    user = TestUser(id=1, name='Darin', age=21)
+    user_sql_cmd, values = user._delete()
+    assert user_sql_cmd == 'DELETE FROM testuser WHERE id = ?'
+    assert values == (1,)
 
 # # Testing select single
 # sql, params = User._select(1)

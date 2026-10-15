@@ -169,7 +169,23 @@ def test_insert_sql_generation() -> None:
     assert values == (1, 'Darin', 21, 0, None)
 
 def test_select_sql_generation() -> None:
-    ...
+    # select one
+    point_sql_cmd, values = TestPoint._select('A')
+    assert point_sql_cmd == 'SELECT name, x, y FROM testpoint WHERE name = ?'
+    assert values == ('A',)
+
+    user_sql_cmd, values = TestUser._select(1)
+    assert user_sql_cmd == 'SELECT id, name, age, count, note FROM testuser WHERE id = ?'
+    assert values == (1,)
+
+    # select all
+    point_sql_cmd, values = TestPoint._select_all()
+    assert point_sql_cmd == 'SELECT name, x, y FROM testpoint'
+    assert values == ()
+
+    user_sql_cmd, values = TestUser._select_all()
+    assert user_sql_cmd == 'SELECT id, name, age, count, note FROM testuser'
+    assert values == ()
 
 def test_update_sql_generation() -> None:
     ...

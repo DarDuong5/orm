@@ -1,13 +1,14 @@
 from fields import *
+from fields import _MISSING
 from model import *
 
 # ============ Test Classes with Metaclasses ============
-class TestPoint(metaclass=ModelMeta):
+class TestPointMeta(metaclass=ModelMeta):
     name: str = StringField(max_length=10, primary_key=True, nullable=False)
     x: int = IntegerField()
-    y: int = IntegerField()
+    y: int = IntegerField() 
 
-class TestUser(metaclass=ModelMeta):
+class TestUserMeta(metaclass=ModelMeta):
     id: int = IntegerField(primary_key=True, nullable=False)
     name: str = StringField(max_length=30)
     age: int = IntegerField()
@@ -52,13 +53,13 @@ def test_default() -> None:
     assert default_int.default == 1
 
     not_default_int = IntegerField()
-    assert isinstance(not_default_int.default, object)
+    assert not_default_int.default is _MISSING
 
     default_str = StringField(default='')
     assert default_str.default == ''
 
     not_default_str = StringField()
-    assert isinstance(not_default_str.default, object)
+    assert not_default_str.default is _MISSING
 
 def test_setters() -> None:
     point = TestPoint.__new__(TestPoint)
@@ -71,10 +72,20 @@ def test_validate() -> None:
     point = TestPoint.__new__(TestPoint)
     try: 
         point.name = "Name is too long"
-        point.x = "Not an integer"
-        point.y = "Also not an integer"
         assert False, 'Expected ValueError but none raised'
-    except:
+    except ValueError:
+        pass
+
+    try:
+        point.x = "Not an integer"
+        assert False, 'Expected TypeError but none raised'
+    except TypeError:
+        pass
+
+    try:
+        point.y = "Also not an integer"
+        assert False, 'Expected TypeError but none raised'
+    except TypeError:
         pass
 
 # ============ Test Classes with Base Models ============
@@ -146,9 +157,14 @@ def test_connect() -> None:
     assert Model._connection is not None
     Model._connection = None
 
-# TODO
-# def test_create_table() -> None:
-#     ...
+def test_create_table() -> None:
+    Model.connect(':memory:')
+    TestUser.create_table()
+    cursor = Model._connection.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    tables = cursor.fetchall()
+    assert ('testuser',) in tables
+    Model._connection = None
 
 def test_create_table_sql_generation() -> None:
     point_sql_cmd = TestPoint._create_table_sql()
@@ -247,65 +263,3 @@ def test_delete_sql_generation() -> None:
     user_sql_cmd, values = user._delete()
     assert user_sql_cmd == 'DELETE FROM testuser WHERE id = ?'
     assert values == (1,)
-
-# # Testing select single
-# sql, params = User._select(1)
-# print(sql)
-# # SELECT id, name, age FROM user WHERE id = ?
-# print(params)
-# # (1,)
-
-# # Testing select all
-# sql, params = User._select_all()
-# print(sql)
-# # SELECT id, name, age FROM user
-# print(params)
-# # ()
-
-# # Testing update
-# u = User(id=1, name='Darin', age=21)
-# sql, vals = u._update(age=22)
-# print(sql)
-# # UPDATE user SET age = ? WHERE id = ?
-# print(vals)
-# # (22, 1)
-
-# sql, vals = u._update(name='David', age=23)
-# print(sql)
-# # UPDATE user SET name = ?, age = ? WHERE id = ?
-# print(vals)
-# # ('David', 23, 1)
-
-# # sql, vals = u._update(name='David', age='invalid age')
-# # TypeError: 'invalid age' does not match to the type INTEGER
-
-# # Testing primary key requirement
-# # class User(Model):
-# #     id = IntegerField(primary_key=False)
-# #     name = StringField(max_length=30, nullable=False)
-# #     age = IntegerField(nullable=True)
-
-# # u = User(id=1, name='Darin', age=21)
-# # ValueError: 'user' requires at least one primary key
-
-# # testing delete
-# u = User(id=1, name='Darin', age=21)
-# sql, vals = u._delete()
-# print(sql)
-# # DELETE FROM user WHERE id = ?
-# print(vals)
-# # (1,)
-
-# # testing sqlite3 - creating table
-# Model.connect(':memory:')
-
-# class User(Model):
-#     id = IntegerField(primary_key=True)
-#     name = StringField(max_length=30)
-# print(User._connection)
-# User.create_table()
-
-# cursor = Model._connection.cursor()
-# cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-# print(cursor.fetchall())
-

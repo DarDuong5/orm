@@ -150,11 +150,16 @@ class Model(metaclass=ModelMeta):
         
         return sql_cmd, (*fields.values(), primary_val)
 
-
+    # updates the row in the table 
     def update(self, **fields) -> None:
         sql_cmd, values = self._update(**fields)
         cursor = self._connection.cursor()
-        
+        cursor.execute(sql_cmd, values)
+        self._connection.commit()
+
+        # also update the attributes on self
+        for name, value in fields.items():
+            setattr(self, name, value) 
 
     # returns the data manipulation command to delete data from a table
     def _delete(self) -> SQLStatement:

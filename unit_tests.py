@@ -300,3 +300,16 @@ def test_get_all() -> None:
     assert users[0].id == 1 and users[0].name == 'Darin' and users[0].age == 21
     assert users[1].id == 2 and users[1].name == 'John' and users[1].age == 22
     assert users[2].id == 3 and users[2].name == 'Jane' and users[2].age == 23
+
+def test_update() -> None:
+    Model.connect(':memory:')
+    TestUser.create_table()
+    user = TestUser(id=1, name='Darin', age=21)
+    user.save()
+    user.update(name='Bob', age=22, count=5, note='Bob the builder')
+    updated_user = user.get(1)
+    assert (updated_user.id == 1 and 
+            updated_user.name == 'Bob' and 
+            updated_user.age == 22 and
+            updated_user.count == 5 and
+            updated_user.note == 'Bob the builder')

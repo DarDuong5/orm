@@ -2,13 +2,14 @@ from fields import *
 from fields import _MISSING
 from model import *
 
-# ============ Test Classes with Metaclasses ============
-class TestPointMeta(metaclass=ModelMeta):
+# ============ Test Classes ============
+
+class TestPoint(Model):
     name: str = StringField(max_length=10, primary_key=True, nullable=False)
     x: int = IntegerField()
-    y: int = IntegerField() 
+    y: int = IntegerField()
 
-class TestUserMeta(metaclass=ModelMeta):
+class TestUser(Model):
     id: int = IntegerField(primary_key=True, nullable=False)
     name: str = StringField(max_length=30)
     age: int = IntegerField()
@@ -16,6 +17,7 @@ class TestUserMeta(metaclass=ModelMeta):
     note: str = StringField(default=None)
 
 # ============ Field Tests ============
+
 def test_field_types() -> None:
     string_field = StringField()
     assert isinstance(string_field, StringField)
@@ -88,20 +90,6 @@ def test_validate() -> None:
     except TypeError:
         pass
 
-# ============ Test Classes with Base Models ============
-
-class TestPoint(Model):
-    name: str = StringField(max_length=10, primary_key=True, nullable=False)
-    x: int = IntegerField()
-    y: int = IntegerField()
-
-class TestUser(Model):
-    id: int = IntegerField(primary_key=True, nullable=False)
-    name: str = StringField(max_length=30)
-    age: int = IntegerField()
-    count: int = IntegerField(default=0)
-    note: str = StringField(default=None)
-
 # ============ Model Tests ============
 
 def test_model_attr() -> None:
@@ -151,20 +139,6 @@ def test_base_model_validation() -> None:
         pass
 
 # ============ SQL Generation Tests ============
-
-def test_connect() -> None:
-    Model.connect(':memory:')
-    assert Model._connection is not None
-    Model._connection = None
-
-def test_create_table() -> None:
-    Model.connect(':memory:')
-    TestUser.create_table()
-    cursor = Model._connection.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    tables = cursor.fetchall()
-    assert ('testuser',) in tables
-    Model._connection = None
 
 def test_create_table_sql_generation() -> None:
     point_sql_cmd = TestPoint._create_table_sql()
@@ -266,6 +240,22 @@ def test_delete_sql_generation() -> None:
 
 # ============ SQL API Tests ============
 
+def test_connect() -> None:
+    Model.connect(':memory:')
+    assert Model._connection is not None
+    Model._connection.close()
+    Model._connection = None
+
+def test_create_table() -> None:
+    Model.connect(':memory:')
+    TestUser.create_table()
+    cursor = Model._connection.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    tables = cursor.fetchall()
+    assert ('testuser',) in tables
+    Model._connection.close()
+    Model._connection = None
+
 def test_save() -> None:
     Model.connect(':memory:')
     TestUser.create_table()
@@ -278,6 +268,7 @@ def test_save() -> None:
     cursor.execute('SELECT id, name, age FROM testuser WHERE id = 1')
     row = cursor.fetchone()
     assert row == (1, 'Darin', 21)
+    Model._connection.close()
     Model._connection = None
 
 def test_get() -> None:
@@ -288,6 +279,7 @@ def test_get() -> None:
     assert isinstance(user, TestUser)
     assert user.id == 1 and user.name == 'Darin' and user.age == 21
     Model._connection.close()
+    Model._connection = None
 
 def test_get_all() -> None:
     Model.connect(':memory:')
@@ -300,6 +292,8 @@ def test_get_all() -> None:
     assert users[0].id == 1 and users[0].name == 'Darin' and users[0].age == 21
     assert users[1].id == 2 and users[1].name == 'John' and users[1].age == 22
     assert users[2].id == 3 and users[2].name == 'Jane' and users[2].age == 23
+    Model._connection.close()
+    Model._connection = None
 
 def test_update() -> None:
     Model.connect(':memory:')
@@ -307,12 +301,14 @@ def test_update() -> None:
     user = TestUser(id=1, name='Darin', age=21)
     user.save()
     user.update(name='Bob', age=22, count=5, note='Bob the builder')
-    updated_user = user.get(1)
+    updated_user = TestUser.get(1)
     assert (updated_user.id == 1 and 
             updated_user.name == 'Bob' and 
             updated_user.age == 22 and
             updated_user.count == 5 and
             updated_user.note == 'Bob the builder')
+    Model._connection.close()
+    Model._connection = None
 
 def test_delete() -> None:
     Model.connect(':memory:')
@@ -323,3 +319,5 @@ def test_delete() -> None:
     user.delete()
     user = TestUser.get(1)
     assert user is None
+    Model._connection.close()
+    Model._connection = None

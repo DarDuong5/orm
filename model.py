@@ -109,7 +109,7 @@ class Model(metaclass=ModelMeta):
         cursor.execute(sql_cmd, values)
         row = cursor.fetchone()
 
-        if not row:
+        if row is None:
             return
         
         return cls(**dict(zip(cls._fields.keys(), row)))

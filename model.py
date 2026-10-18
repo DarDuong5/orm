@@ -101,11 +101,27 @@ class Model(metaclass=ModelMeta):
         sql_cmd = f'SELECT {', '.join(cls._fields.keys())} FROM {cls._table_name} WHERE {cls._pk} = ?'
         return sql_cmd, (primary_key, )
 
+    # gets the row from the database and creates the object and return it if it exists
+    @classmethod
+    def get(cls, primary_key) -> None:
+        sql_cmd, values = cls._select(primary_key)
+        cursor = cls._connection.cursor()
+        cursor.execute(sql_cmd, values)
+        row = cursor.fetchone()
+
+        if not row:
+            return
+        
+        return cls(**dict(zip(cls._fields.keys(), row)))
+
     # returns the data manipulation command to select all data from a table
     @classmethod
     def _select_all(cls) -> SQLStatement:
         sql_cmd = f'SELECT {', '.join(cls._fields.keys())} FROM {cls._table_name}'
         return sql_cmd, ()
+
+    def get_all(self) -> None:
+        ...
        
     # returns the data manipulation command to update data from a table
     def _update(self, **fields) -> SQLStatement:
@@ -127,8 +143,15 @@ class Model(metaclass=ModelMeta):
         
         return sql_cmd, (*fields.values(), primary_val)
 
+
+    def update(self) -> None:
+        ...
+
     # returns the data manipulation command to delete data from a table
     def _delete(self) -> SQLStatement:
         sql_cmd = f'DELETE FROM {self._table_name} WHERE {self._pk} = ?'
         return sql_cmd, (self.__dict__[self._pk], )
+
+    def delete(self) -> None:
+        ...
 

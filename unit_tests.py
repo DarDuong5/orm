@@ -264,12 +264,14 @@ def test_delete_sql_generation() -> None:
     assert user_sql_cmd == 'DELETE FROM testuser WHERE id = ?'
     assert values == (1,)
 
+# ============ SQL API Tests ============
+
 def test_save() -> None:
     Model.connect(':memory:')
     TestUser.create_table()
 
     user = TestUser(id=1, name='Darin', age=21)
-    user._save()
+    user.save()
 
     # verify the row is in the database
     cursor = Model._connection.cursor()
@@ -277,3 +279,12 @@ def test_save() -> None:
     row = cursor.fetchone()
     assert row == (1, 'Darin', 21)
     Model._connection = None
+
+def test_get() -> None:
+    Model.connect(':memory:')
+    TestUser.create_table()
+    TestUser(id=1, name='Darin', age=21).save()
+    user = TestUser.get(1)
+    assert isinstance(user, TestUser)
+    assert user.id == 1 and user.name == 'Darin' and user.age == 21
+    Model._connection.close()

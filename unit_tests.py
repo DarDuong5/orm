@@ -263,3 +263,17 @@ def test_delete_sql_generation() -> None:
     user_sql_cmd, values = user._delete()
     assert user_sql_cmd == 'DELETE FROM testuser WHERE id = ?'
     assert values == (1,)
+
+def test_save() -> None:
+    Model.connect(':memory:')
+    TestUser.create_table()
+
+    user = TestUser(id=1, name='Darin', age=21)
+    user._save()
+
+    # verify the row is in the database
+    cursor = Model._connection.cursor()
+    cursor.execute('SELECT id, name, age FROM testuser WHERE id = 1')
+    row = cursor.fetchone()
+    assert row == (1, 'Darin', 21)
+    Model._connection = None

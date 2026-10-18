@@ -88,8 +88,12 @@ class Model(metaclass=ModelMeta):
         values = tuple(getattr(self, name) for name in self._fields)
         return sql_cmd, values
 
-    def _save(self):
-        ...
+    # saves the row in the database
+    def save(self) -> None:
+        sql_cmd, values = self._insert()
+        cursor = self._connection.cursor()
+        cursor.execute(sql_cmd, values)
+        self._connection.commit()
 
     # returns the data manipulation command to select data with primary key from a table
     @classmethod

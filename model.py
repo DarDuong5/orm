@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 import sqlite3
 
 from fields import Field, _MISSING
@@ -101,9 +101,9 @@ class Model(metaclass=ModelMeta):
         sql_cmd = f'SELECT {', '.join(cls._fields.keys())} FROM {cls._table_name} WHERE {cls._pk} = ?'
         return sql_cmd, (primary_key, )
 
-    # gets the row from the database and creates the object and return it if it exists
+    # gets the row from the table and creates the object and return it if it exists
     @classmethod
-    def get(cls, primary_key) -> None:
+    def get(cls, primary_key) -> Self | None:
         sql_cmd, values = cls._select(primary_key)
         cursor = cls._connection.cursor()
         cursor.execute(sql_cmd, values)
@@ -120,8 +120,15 @@ class Model(metaclass=ModelMeta):
         sql_cmd = f'SELECT {', '.join(cls._fields.keys())} FROM {cls._table_name}'
         return sql_cmd, ()
 
-    def get_all(self) -> None:
-        ...
+    # gets all of the rows in the table and creates and returns a list of instances of each one
+    @classmethod
+    def get_all(cls) -> list[Self]:
+        sql_cmd, values = cls._select_all()
+        cursor = cls._connection.cursor()
+        cursor.execute(sql_cmd, values)
+        rows = cursor.fetchall()
+        instances = [cls(**dict(zip(cls._fields.keys(), row))) for row in rows]
+        return instances
        
     # returns the data manipulation command to update data from a table
     def _update(self, **fields) -> SQLStatement:
@@ -144,8 +151,10 @@ class Model(metaclass=ModelMeta):
         return sql_cmd, (*fields.values(), primary_val)
 
 
-    def update(self) -> None:
-        ...
+    def update(self, **fields) -> None:
+        sql_cmd, values = self._update(**fields)
+        cursor = self._connection.cursor()
+        
 
     # returns the data manipulation command to delete data from a table
     def _delete(self) -> SQLStatement:

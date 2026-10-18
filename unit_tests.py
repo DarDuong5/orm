@@ -288,3 +288,15 @@ def test_get() -> None:
     assert isinstance(user, TestUser)
     assert user.id == 1 and user.name == 'Darin' and user.age == 21
     Model._connection.close()
+
+def test_get_all() -> None:
+    Model.connect(':memory:')
+    TestUser.create_table()
+    TestUser(id=1, name='Darin', age=21).save()
+    TestUser(id=2, name='John', age=22).save()
+    TestUser(id=3, name='Jane', age=23).save()
+    users = TestUser.get_all()
+    assert all(isinstance(user, TestUser) for user in users)
+    assert users[0].id == 1 and users[0].name == 'Darin' and users[0].age == 21
+    assert users[1].id == 2 and users[1].name == 'John' and users[1].age == 22
+    assert users[2].id == 3 and users[2].name == 'Jane' and users[2].age == 23

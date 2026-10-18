@@ -166,6 +166,10 @@ class Model(metaclass=ModelMeta):
         sql_cmd = f'DELETE FROM {self._table_name} WHERE {self._pk} = ?'
         return sql_cmd, (self.__dict__[self._pk], )
 
+    # deletes the row in the table
     def delete(self) -> None:
-        ...
+        sql_cmd, values = self._delete()
+        cursor = self._connection.cursor()
+        cursor.execute(sql_cmd, values)
+        self._connection.commit()
 

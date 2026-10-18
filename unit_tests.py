@@ -313,3 +313,13 @@ def test_update() -> None:
             updated_user.age == 22 and
             updated_user.count == 5 and
             updated_user.note == 'Bob the builder')
+
+def test_delete() -> None:
+    Model.connect(':memory:')
+    TestUser.create_table()
+    TestUser(id=1, name='Darin', age=21).save()
+    user = TestUser.get(1)
+    assert user.id == 1 and user.name == 'Darin' and user.age == 21
+    user.delete()
+    user = TestUser.get(1)
+    assert user is None

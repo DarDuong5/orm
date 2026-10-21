@@ -246,6 +246,12 @@ def test_connect() -> None:
     Model._connection.close()
     Model._connection = None
 
+def test_disconnect() -> None:
+    Model.connect(':memory:')
+    assert Model._connection is not None
+    Model.disconnect()
+    assert Model._connection is None
+
 def test_create_table() -> None:
     Model.connect(':memory:')
     TestUser.create_table()

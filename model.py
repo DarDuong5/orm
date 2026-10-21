@@ -58,6 +58,11 @@ class Model(metaclass=ModelMeta):
     def connect(cls, db_path) -> None:
         cls._connection = sqlite3.connect(db_path)
 
+    @classmethod
+    def disconnect(cls) -> None:
+        cls._connection.close()
+        cls._connection = None
+
     # gets a cursor, executes, and commits to database
     @classmethod
     def create_table(cls) -> None:

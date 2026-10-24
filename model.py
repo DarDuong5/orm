@@ -90,7 +90,11 @@ class Model(metaclass=ModelMeta):
         names = ', '.join(self._fields.keys())
         placeholders = ', '.join('?' for _ in self._fields)
         sql_cmd = f'INSERT INTO {self._table_name} ({names}) VALUES ({placeholders})'
-        values = tuple(getattr(self, name) for name in self._fields)
+        values = tuple(
+            field.to_db(getattr(self, name)) 
+            for name, field in self._fields.items()
+        )
+
         return sql_cmd, values
 
     # saves the row in the database
@@ -116,8 +120,13 @@ class Model(metaclass=ModelMeta):
 
         if row is None:
             return
-        
-        return cls(**dict(zip(cls._fields.keys(), row)))
+
+        kwargs = {
+            name: field.from_db(value)
+            for (name, field), value in zip(cls._fields.items(), row)
+        }
+
+        return cls(**kwargs)
 
     # returns the data manipulation command to select all data from a table
     @classmethod
@@ -132,7 +141,15 @@ class Model(metaclass=ModelMeta):
         cursor = cls._connection.cursor()
         cursor.execute(sql_cmd, values)
         rows = cursor.fetchall()
-        instances = [cls(**dict(zip(cls._fields.keys(), row))) for row in rows]
+        instances = []
+
+        for row in rows:
+            kwargs = {}
+            for name, value in zip(cls._fields.keys(), row):
+                field = cls._fields[name]
+                kwargs[name] = field.from_db(value)
+            instances.append(cls(**kwargs))
+
         return instances
        
     # returns the data manipulation command to update data from a table
@@ -151,9 +168,10 @@ class Model(metaclass=ModelMeta):
 
         field_placeholders = ', '.join(f'{name} = ?' for name in fields)
         sql_cmd = f'UPDATE {self._table_name} SET {field_placeholders} WHERE {self._pk} = ?'
-        primary_val = self.__dict__[self._pk]
+        primary_val = self._fields[self._pk].to_db(getattr(self, self._pk))
+        values = [self._fields[name].to_db(value) for name, value in fields.items()]
         
-        return sql_cmd, (*fields.values(), primary_val)
+        return sql_cmd, (*values, primary_val)
 
     # updates the row in the table 
     def update(self, **fields) -> None:

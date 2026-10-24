@@ -38,6 +38,14 @@ class Field:
     def _validate_type(self, value):
         ...
 
+    # converts values from Python to Sqlite
+    def to_db(self, value):
+        return value
+
+    # converts values from Sqlite to Python
+    def from_db(self, value):
+        return value
+
 # to represent an integer field
 class IntegerField(Field):
     sql_type = 'INTEGER'

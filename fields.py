@@ -50,7 +50,7 @@ class IntegerField(Field):
             raise TypeError(f'{value!r} does not match to the type {self.sql_type}')   
 
 # to represent a string field
-class StringField(Field):
+class TextField(Field):
     sql_type = 'TEXT'
 
     def __init__(self, max_length=None, primary_key=False, nullable=True, default=_MISSING) -> None:
@@ -63,5 +63,18 @@ class StringField(Field):
         if self.max_length is not None and len(value) > self.max_length:
             raise ValueError(f'Length of value must be less than the given max_length:{self.max_length} given {value!r}')
 
+# to represent a floating point field
+class RealField(Field):
+    sql_type = 'REAL'
+
+    def __init__(self, precision=None, primary_key=False, nullable=True, default=_MISSING) -> None:
+        super().__init__(primary_key=primary_key, nullable=nullable, default=default)
+        self.precision = precision
+
+    def _validate_type(self, value) -> None:
+        if not isinstance(value, (int, float)):
+            raise TypeError(f'{value!r} does not match to the type {self.sql_type}')
+        if isinstance(value, int):
+            self.__dict__[self.storage_name] = float(value)
 
 

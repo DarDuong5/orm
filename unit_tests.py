@@ -5,24 +5,28 @@ from model import *
 # ============ Test Classes ============
 
 class TestPoint(Model):
-    name: str = StringField(max_length=10, primary_key=True, nullable=False)
-    x: int = IntegerField()
-    y: int = IntegerField()
+    name: str = TextField(max_length=10, primary_key=True, nullable=False)
+    x: float = RealField(default=0)
+    y: float = RealField(default=0)
 
 class TestUser(Model):
     id: int = IntegerField(primary_key=True, nullable=False)
-    name: str = StringField(max_length=30)
+    name: str = TextField(max_length=30)
     age: int = IntegerField()
     count: int = IntegerField(default=0)
-    note: str = StringField(default=None)
+    note: str = TextField(default=None)
 
 # ============ Field Tests ============
 
 def test_field_types() -> None:
-    string_field = StringField()
-    assert isinstance(string_field, StringField)
+    string_field = TextField()
+    assert isinstance(string_field, TextField)
+
     integer_field = IntegerField()
     assert isinstance(integer_field, IntegerField)
+
+    float_field = RealField()
+    assert isinstance(float_field, RealField)
 
 def test_primary_key() -> None:
     primary_int = IntegerField(primary_key=True)
@@ -31,24 +35,36 @@ def test_primary_key() -> None:
     not_primary_int = IntegerField()
     assert not_primary_int.primary_key == False
 
-    primary_str = StringField(primary_key=True)
-    assert primary_str.primary_key == True
+    primary_txt = TextField(primary_key=True)
+    assert primary_txt.primary_key == True
 
-    not_primary_str = StringField()
-    assert not_primary_str.primary_key == False
+    not_primary_txt = TextField()
+    assert not_primary_txt.primary_key == False
+
+    primary_real = RealField(primary_key=True)
+    assert primary_real.primary_key == True
+
+    not_primary_real = RealField()
+    assert not_primary_real.primary_key == False
 
 def test_nullable() -> None:
-    nullable_int = IntegerField(nullable=True)
+    nullable_int = IntegerField()
     assert nullable_int.nullable == True
 
     not_nullable_int = IntegerField(nullable=False)
     assert not_nullable_int.nullable == False
 
-    nullable_str = StringField(nullable=True)
-    assert nullable_str.nullable == True
+    nullable_txt = TextField()
+    assert nullable_txt.nullable == True
 
-    not_nullable_str = StringField(nullable=False)
-    assert not_nullable_str.nullable == False
+    not_nullable_txt = TextField(nullable=False)
+    assert not_nullable_txt.nullable == False
+
+    nullable_real = RealField()
+    assert nullable_real.nullable == True
+
+    not_nullable_real = RealField(nullable=False)
+    assert not_nullable_real.nullable == False
 
 def test_default() -> None:
     default_int = IntegerField(default=1)
@@ -57,18 +73,24 @@ def test_default() -> None:
     not_default_int = IntegerField()
     assert not_default_int.default is _MISSING
 
-    default_str = StringField(default='')
-    assert default_str.default == ''
+    default_txt = TextField(default='')
+    assert default_txt.default == ''
 
-    not_default_str = StringField()
-    assert not_default_str.default is _MISSING
+    not_default_txt = TextField()
+    assert not_default_txt.default is _MISSING
+
+    default_real = RealField(default=1.0)
+    assert default_real.default == 1.0
+
+    not_default_real = RealField()
+    assert not_default_real.default is _MISSING    
 
 def test_setters() -> None:
     point = TestPoint.__new__(TestPoint)
-    point.name, point.x, point.y = 'A', 1, 2
+    point.name, point.x, point.y = 'A', 1, 2.4
     assert point.name == 'A'
-    assert point.x == 1
-    assert point.y == 2
+    assert point.x == 1.0
+    assert point.y == 2.4
 
 def test_validate() -> None:
     point = TestPoint.__new__(TestPoint)
@@ -79,13 +101,13 @@ def test_validate() -> None:
         pass
 
     try:
-        point.x = "Not an integer"
+        point.x = "Not a real"
         assert False, 'Expected TypeError but none raised'
     except TypeError:
         pass
 
     try:
-        point.y = "Also not an integer"
+        point.y = "Also not a real"
         assert False, 'Expected TypeError but none raised'
     except TypeError:
         pass
@@ -106,6 +128,11 @@ def test_model_attr() -> None:
     assert TestUser._pk == 'id'
 
 def test_base_model() -> None:
+    point = TestPoint(name='A', y=2.5)
+    assert point.name == 'A'
+    assert point.x == 0.0
+    assert point.y == 2.5
+
     user = TestUser(id=1, name='Darin', age=21)
     assert user.id == 1
     assert user.name == 'Darin'
@@ -142,16 +169,16 @@ def test_base_model_validation() -> None:
 
 def test_create_table_sql_generation() -> None:
     point_sql_cmd = TestPoint._create_table_sql()
-    assert point_sql_cmd == 'CREATE TABLE IF NOT EXISTS testpoint (name TEXT PRIMARY KEY NOT NULL, x INTEGER, y INTEGER)'
+    assert point_sql_cmd == 'CREATE TABLE IF NOT EXISTS testpoint (name TEXT PRIMARY KEY NOT NULL, x REAL, y REAL)'
 
     user_sql_cmd = TestUser._create_table_sql()
     assert user_sql_cmd == 'CREATE TABLE IF NOT EXISTS testuser (id INTEGER PRIMARY KEY NOT NULL, name TEXT, age INTEGER, count INTEGER, note TEXT)'
 
 def test_insert_sql_generation() -> None:
-    point = TestPoint(name='A', x=1, y=2)
+    point = TestPoint(name='A', x=1, y=2.5)
     sql_cmd, values = point._insert()
     assert sql_cmd == 'INSERT INTO testpoint (name, x, y) VALUES (?, ?, ?)'
-    assert values == ('A', 1, 2)
+    assert values == ('A', 1.0, 2.5)
 
     user = TestUser(id=1, name='Darin', age=21)
     sql_cmd, values = user._insert()
@@ -228,7 +255,7 @@ def test_update_sql_generation() -> None:
         pass
 
 def test_delete_sql_generation() -> None:
-    point = TestPoint(name='A', x=1, y=2)
+    point = TestPoint(name='A', x=1, y=2.5)
     point_sql_cmd, values = point._delete()
     assert point_sql_cmd == 'DELETE FROM testpoint WHERE name = ?'
     assert values == ('A',)

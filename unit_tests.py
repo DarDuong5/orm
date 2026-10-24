@@ -281,56 +281,100 @@ def test_disconnect() -> None:
 
 def test_create_table() -> None:
     Model.connect(':memory:')
+    TestPoint.create_table()
     TestUser.create_table()
+
     cursor = Model._connection.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables = cursor.fetchall()
+    assert ('testpoint',) in tables
     assert ('testuser',) in tables
+
     Model._connection.close()
     Model._connection = None
 
 def test_save() -> None:
     Model.connect(':memory:')
+    TestPoint.create_table()
     TestUser.create_table()
 
+    point = TestPoint(name='A', x=1, y=2.5)
+    point.save()
     user = TestUser(id=1, name='Darin', age=21)
     user.save()
 
     # verify the row is in the database
     cursor = Model._connection.cursor()
+    cursor.execute("SELECT name, x, y FROM testpoint WHERE name = 'A'")
+    row = cursor.fetchone()
+    assert row == ('A', 1.0, 2.5)
+
     cursor.execute('SELECT id, name, age FROM testuser WHERE id = 1')
     row = cursor.fetchone()
     assert row == (1, 'Darin', 21)
+
     Model._connection.close()
     Model._connection = None
 
 def test_get() -> None:
     Model.connect(':memory:')
+    TestPoint.create_table()
     TestUser.create_table()
+    TestPoint(name='A', x=1.0, y=2.5).save()
     TestUser(id=1, name='Darin', age=21).save()
+
+    point = TestPoint.get('A')
     user = TestUser.get(1)
+
+    assert isinstance(point, TestPoint)
+    assert point.name == 'A' and point.x == 1.0 and point.y == 2.5
     assert isinstance(user, TestUser)
     assert user.id == 1 and user.name == 'Darin' and user.age == 21
+
     Model._connection.close()
     Model._connection = None
 
 def test_get_all() -> None:
     Model.connect(':memory:')
+    TestPoint.create_table()
     TestUser.create_table()
+
+    TestPoint(name='A').save()
+    TestPoint(name='B', x=1.0, y=2.5).save()
+    TestPoint(name='C', x=1.7, y=2).save()
+
+    points = TestPoint.get_all()
+    assert all(isinstance(point, TestPoint) for point in points)
+    assert points[0].name == 'A' and points[0].x == 0.0 and points[0].y == 0.0
+    assert points[1].name == 'B' and points[1].x == 1.0 and points[1].y == 2.5
+    assert points[2].name == 'C' and points[2].x == 1.7 and points[2].y == 2.0
+
     TestUser(id=1, name='Darin', age=21).save()
     TestUser(id=2, name='John', age=22).save()
     TestUser(id=3, name='Jane', age=23).save()
+
     users = TestUser.get_all()
     assert all(isinstance(user, TestUser) for user in users)
     assert users[0].id == 1 and users[0].name == 'Darin' and users[0].age == 21
     assert users[1].id == 2 and users[1].name == 'John' and users[1].age == 22
     assert users[2].id == 3 and users[2].name == 'Jane' and users[2].age == 23
+
     Model._connection.close()
     Model._connection = None
 
 def test_update() -> None:
     Model.connect(':memory:')
+    TestPoint.create_table()
     TestUser.create_table()
+
+    point = TestPoint(name='A', x=1.25, y=2.5)
+    point.save()
+    point.update(x=0.0)
+    updated_point = TestPoint.get('A')
+    assert (updated_point.name == 'A' and
+            updated_point.x == 0.0 and
+            updated_point.y == 2.5)
+
     user = TestUser(id=1, name='Darin', age=21)
     user.save()
     user.update(name='Bob', age=22, count=5, note='Bob the builder')
@@ -340,17 +384,28 @@ def test_update() -> None:
             updated_user.age == 22 and
             updated_user.count == 5 and
             updated_user.note == 'Bob the builder')
+    
     Model._connection.close()
     Model._connection = None
 
 def test_delete() -> None:
     Model.connect(':memory:')
+    TestPoint.create_table()
     TestUser.create_table()
+    TestPoint(name='A').save()
     TestUser(id=1, name='Darin', age=21).save()
+
+    point = TestPoint.get('A')
+    assert point.name == 'A' and point.x == 0.0 and point.y == 0.0
     user = TestUser.get(1)
     assert user.id == 1 and user.name == 'Darin' and user.age == 21
+
+    point.delete()
     user.delete()
+    point = TestPoint.get('A')
     user = TestUser.get(1)
+    assert point is None
     assert user is None
+    
     Model._connection.close()
     Model._connection = None

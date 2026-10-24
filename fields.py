@@ -74,7 +74,4 @@ class RealField(Field):
     def _validate_type(self, value) -> None:
         if not isinstance(value, (int, float)):
             raise TypeError(f'{value!r} does not match to the type {self.sql_type}')
-        if isinstance(value, int):
-            self.__dict__[self.storage_name] = float(value)
-
 

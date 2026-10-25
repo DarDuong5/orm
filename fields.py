@@ -83,3 +83,26 @@ class RealField(Field):
         if not isinstance(value, (int, float)):
             raise TypeError(f'{value!r} does not match to the type {self.sql_type}')
 
+# to represent a boolean field
+class BooleanField(Field):
+    sql_type = 'BOOLEAN' # 0s or 1s
+
+    def __init__(self, primary_key=False, nullable=True, default=_MISSING) -> None:
+        super().__init__(primary_key=primary_key, nullable=nullable, default=default)
+
+    def _validate_type(self, value):
+        if not isinstance(value, bool):
+            raise TypeError(f'{value!r} does not match to the type {self.sql_type}')
+
+    def to_db(self, value) -> int | None:
+        if value is None:
+            return None
+        
+        return int(value)
+
+    def from_db(self, value) -> bool | None:
+        if value is None:
+            return None
+
+        return bool(value)
+    

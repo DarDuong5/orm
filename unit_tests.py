@@ -15,6 +15,7 @@ class TestUser(Model):
     age: int = IntegerField()
     count: int = IntegerField(default=0)
     note: str = TextField(default=None)
+    is_student: bool = BooleanField(default=False)
 
 # ============ Field Tests ============
 
@@ -27,6 +28,9 @@ def test_field_types() -> None:
 
     float_field = RealField()
     assert isinstance(float_field, RealField)
+
+    bool_field = BooleanField()
+    assert isinstance(bool_field, BooleanField)
 
 def test_primary_key() -> None:
     primary_int = IntegerField(primary_key=True)
@@ -47,6 +51,12 @@ def test_primary_key() -> None:
     not_primary_real = RealField()
     assert not_primary_real.primary_key == False
 
+    primary_bool = BooleanField(primary_key=True)
+    assert primary_bool.primary_key == True
+
+    not_primary_bool = BooleanField()
+    assert not_primary_bool.primary_key == False
+
 def test_nullable() -> None:
     nullable_int = IntegerField()
     assert nullable_int.nullable == True
@@ -66,6 +76,12 @@ def test_nullable() -> None:
     not_nullable_real = RealField(nullable=False)
     assert not_nullable_real.nullable == False
 
+    nullable_bool = BooleanField()
+    assert nullable_bool.nullable == True
+
+    not_nullable_bool = BooleanField(nullable=False)
+    assert not_nullable_bool.nullable == False
+
 def test_default() -> None:
     default_int = IntegerField(default=1)
     assert default_int.default == 1
@@ -83,17 +99,33 @@ def test_default() -> None:
     assert default_real.default == 1.0
 
     not_default_real = RealField()
-    assert not_default_real.default is _MISSING    
+    assert not_default_real.default is _MISSING  
+
+    default_bool = BooleanField(default=True)
+    assert default_bool.default is True
+
+    not_default_bool = BooleanField()
+    assert not_default_bool.default is _MISSING  
 
 def test_setters() -> None:
     point = TestPoint.__new__(TestPoint)
     point.name, point.x, point.y = 'A', 1, 2.4
-    assert point.name == 'A'
-    assert point.x == 1.0
-    assert point.y == 2.4
+    assert (point.name == 'A' and 
+            point.x == 1.0 and 
+            point.y == 2.4)
+
+    user = TestUser.__new__(TestUser)
+    user.id, user.name, user.age, user.count, user.note, user.is_student = 1, 'Darin', 21, 67, 'foo bar', True
+    assert (user.id == 1 and 
+            user.name == 'Darin' and 
+            user.age == 21 and 
+            user.count == 67 and 
+            user.note == 'foo bar' 
+            and user.is_student is True)
 
 def test_validate() -> None:
     point = TestPoint.__new__(TestPoint)
+    # testing text and real field types
     try: 
         point.name = "Name is too long"
         assert False, 'Expected ValueError but none raised'
@@ -112,6 +144,20 @@ def test_validate() -> None:
     except TypeError:
         pass
 
+    user = TestUser.__new__(TestUser)
+    # testing integer and boolean field types
+    try:
+        user.age = 'Not an integer'
+        assert False, 'Expected TypeError but none raised'
+    except TypeError:
+        pass
+
+    try:
+        user.is_student = 'Not a boolean'
+        assert False, 'Expected TypeError but none raised'
+    except TypeError:
+        pass
+        
 # ============ Model Tests ============
 
 def test_model_attr() -> None:
@@ -139,6 +185,7 @@ def test_base_model() -> None:
     assert user.age == 21
     assert user.count == 0
     assert user.note is None
+    assert user.is_student is False
 
 def test_base_model_validation() -> None:
     try:
@@ -172,7 +219,7 @@ def test_create_table_sql_generation() -> None:
     assert point_sql_cmd == 'CREATE TABLE IF NOT EXISTS testpoint (name TEXT PRIMARY KEY NOT NULL, x REAL, y REAL)'
 
     user_sql_cmd = TestUser._create_table_sql()
-    assert user_sql_cmd == 'CREATE TABLE IF NOT EXISTS testuser (id INTEGER PRIMARY KEY NOT NULL, name TEXT, age INTEGER, count INTEGER, note TEXT)'
+    assert user_sql_cmd == 'CREATE TABLE IF NOT EXISTS testuser (id INTEGER PRIMARY KEY NOT NULL, name TEXT, age INTEGER, count INTEGER, note TEXT, is_student BOOLEAN)'
 
 def test_insert_sql_generation() -> None:
     point = TestPoint(name='A', x=1, y=2.5)
@@ -182,8 +229,8 @@ def test_insert_sql_generation() -> None:
 
     user = TestUser(id=1, name='Darin', age=21)
     sql_cmd, values = user._insert()
-    assert sql_cmd == 'INSERT INTO testuser (id, name, age, count, note) VALUES (?, ?, ?, ?, ?)'
-    assert values == (1, 'Darin', 21, 0, None)
+    assert sql_cmd == 'INSERT INTO testuser (id, name, age, count, note, is_student) VALUES (?, ?, ?, ?, ?, ?)'
+    assert values == (1, 'Darin', 21, 0, None, False)
 
 def test_select_sql_generation() -> None:
     # select one
@@ -192,7 +239,7 @@ def test_select_sql_generation() -> None:
     assert values == ('A',)
 
     user_sql_cmd, values = TestUser._select(1)
-    assert user_sql_cmd == 'SELECT id, name, age, count, note FROM testuser WHERE id = ?'
+    assert user_sql_cmd == 'SELECT id, name, age, count, note, is_student FROM testuser WHERE id = ?'
     assert values == (1,)
 
     # select all
@@ -201,7 +248,7 @@ def test_select_sql_generation() -> None:
     assert values == ()
 
     user_sql_cmd, values = TestUser._select_all()
-    assert user_sql_cmd == 'SELECT id, name, age, count, note FROM testuser'
+    assert user_sql_cmd == 'SELECT id, name, age, count, note, is_student FROM testuser'
     assert values == ()
 
 def test_update_sql_generation() -> None:
@@ -377,13 +424,14 @@ def test_update() -> None:
 
     user = TestUser(id=1, name='Darin', age=21)
     user.save()
-    user.update(name='Bob', age=22, count=5, note='Bob the builder')
+    user.update(name='Bob', age=22, count=5, note='Bob the builder', is_student=True)
     updated_user = TestUser.get(1)
     assert (updated_user.id == 1 and 
             updated_user.name == 'Bob' and 
             updated_user.age == 22 and
             updated_user.count == 5 and
-            updated_user.note == 'Bob the builder')
+            updated_user.note == 'Bob the builder' and
+            updated_user.is_student == True)
     
     Model._connection.close()
     Model._connection = None

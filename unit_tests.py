@@ -1,3 +1,5 @@
+import pytest
+
 from fields import *
 from fields import _MISSING
 from model import *
@@ -230,7 +232,7 @@ def test_insert_sql_generation() -> None:
     user = TestUser(id=1, name='Darin', age=21)
     sql_cmd, values = user._insert()
     assert sql_cmd == 'INSERT INTO testuser (id, name, age, count, note, is_student) VALUES (?, ?, ?, ?, ?, ?)'
-    assert values == (1, 'Darin', 21, 0, None, False)
+    assert values == (1, 'Darin', 21, 0, None, 0)
 
 def test_select_sql_generation() -> None:
     # select one
@@ -314,6 +316,15 @@ def test_delete_sql_generation() -> None:
 
 # ============ SQL API Tests ============
 
+@pytest.fixture
+def db():
+    Model.connect(':memory:')
+    TestPoint.create_table()
+    TestUser.create_table()
+    yield
+    Model._connection.close()
+    Model._connection = None
+
 def test_connect() -> None:
     Model.connect(':memory:')
     assert Model._connection is not None
@@ -340,11 +351,7 @@ def test_create_table() -> None:
     Model._connection.close()
     Model._connection = None
 
-def test_save() -> None:
-    Model.connect(':memory:')
-    TestPoint.create_table()
-    TestUser.create_table()
-
+def test_save(db) -> None:
     point = TestPoint(name='A', x=1, y=2.5)
     point.save()
     user = TestUser(id=1, name='Darin', age=21)
@@ -360,13 +367,7 @@ def test_save() -> None:
     row = cursor.fetchone()
     assert row == (1, 'Darin', 21)
 
-    Model._connection.close()
-    Model._connection = None
-
-def test_get() -> None:
-    Model.connect(':memory:')
-    TestPoint.create_table()
-    TestUser.create_table()
+def test_get(db) -> None:
     TestPoint(name='A', x=1.0, y=2.5).save()
     TestUser(id=1, name='Darin', age=21).save()
 
@@ -378,14 +379,7 @@ def test_get() -> None:
     assert isinstance(user, TestUser)
     assert user.id == 1 and user.name == 'Darin' and user.age == 21
 
-    Model._connection.close()
-    Model._connection = None
-
-def test_get_all() -> None:
-    Model.connect(':memory:')
-    TestPoint.create_table()
-    TestUser.create_table()
-
+def test_get_all(db) -> None:
     TestPoint(name='A').save()
     TestPoint(name='B', x=1.0, y=2.5).save()
     TestPoint(name='C', x=1.7, y=2).save()
@@ -406,14 +400,7 @@ def test_get_all() -> None:
     assert users[1].id == 2 and users[1].name == 'John' and users[1].age == 22
     assert users[2].id == 3 and users[2].name == 'Jane' and users[2].age == 23
 
-    Model._connection.close()
-    Model._connection = None
-
-def test_update() -> None:
-    Model.connect(':memory:')
-    TestPoint.create_table()
-    TestUser.create_table()
-
+def test_update(db) -> None:
     point = TestPoint(name='A', x=1.25, y=2.5)
     point.save()
     point.update(x=0.0)
@@ -431,15 +418,9 @@ def test_update() -> None:
             updated_user.age == 22 and
             updated_user.count == 5 and
             updated_user.note == 'Bob the builder' and
-            updated_user.is_student == True)
-    
-    Model._connection.close()
-    Model._connection = None
+            updated_user.is_student is True)
 
-def test_delete() -> None:
-    Model.connect(':memory:')
-    TestPoint.create_table()
-    TestUser.create_table()
+def test_delete(db) -> None:
     TestPoint(name='A').save()
     TestUser(id=1, name='Darin', age=21).save()
 
@@ -454,6 +435,3 @@ def test_delete() -> None:
     user = TestUser.get(1)
     assert point is None
     assert user is None
-    
-    Model._connection.close()
-    Model._connection = None

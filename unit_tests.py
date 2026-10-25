@@ -6,18 +6,22 @@ from model import *
 
 # ============ Test Classes ============
 
-class TestPoint(Model):
+class Point(Model):
     name: str = TextField(max_length=10, primary_key=True, nullable=False)
     x: float = RealField(default=0)
     y: float = RealField(default=0)
 
-class TestUser(Model):
+class User(Model):
     id: int = IntegerField(primary_key=True, nullable=False)
     name: str = TextField(max_length=30)
     age: int = IntegerField()
     count: int = IntegerField(default=0)
     note: str = TextField(default=None)
     is_student: bool = BooleanField(default=False)
+
+class Event(Model):
+    id: int = IntegerField(primary_key=True, nullable=False)
+    timestamp: datetime = DateTimeField(nullable=False)
 
 # ============ Field Tests ============
 
@@ -34,55 +38,70 @@ def test_field_types() -> None:
     bool_field = BooleanField()
     assert isinstance(bool_field, BooleanField)
 
+    datetime_field = DateTimeField()
+    assert isinstance(datetime_field, DateTimeField)
+
 def test_primary_key() -> None:
     primary_int = IntegerField(primary_key=True)
-    assert primary_int.primary_key == True
+    assert primary_int.primary_key is True
 
     not_primary_int = IntegerField()
-    assert not_primary_int.primary_key == False
+    assert not_primary_int.primary_key is False
 
     primary_txt = TextField(primary_key=True)
-    assert primary_txt.primary_key == True
+    assert primary_txt.primary_key is True
 
     not_primary_txt = TextField()
-    assert not_primary_txt.primary_key == False
+    assert not_primary_txt.primary_key is False
 
     primary_real = RealField(primary_key=True)
-    assert primary_real.primary_key == True
+    assert primary_real.primary_key is True
 
     not_primary_real = RealField()
-    assert not_primary_real.primary_key == False
+    assert not_primary_real.primary_key is False
 
     primary_bool = BooleanField(primary_key=True)
-    assert primary_bool.primary_key == True
+    assert primary_bool.primary_key is True
 
     not_primary_bool = BooleanField()
-    assert not_primary_bool.primary_key == False
+    assert not_primary_bool.primary_key is False
+
+    primary_datetime = DateTimeField(primary_key=True)
+    assert primary_datetime.primary_key is True
+
+    not_primary_datetime = DateTimeField()
+    assert not_primary_datetime.primary_key is False
 
 def test_nullable() -> None:
     nullable_int = IntegerField()
-    assert nullable_int.nullable == True
+    assert nullable_int.nullable is True
 
     not_nullable_int = IntegerField(nullable=False)
-    assert not_nullable_int.nullable == False
+    assert not_nullable_int.nullable is False
 
     nullable_txt = TextField()
-    assert nullable_txt.nullable == True
+    assert nullable_txt.nullable is True
 
     not_nullable_txt = TextField(nullable=False)
-    assert not_nullable_txt.nullable == False
+    assert not_nullable_txt.nullable is False
 
     nullable_real = RealField()
-    assert nullable_real.nullable == True
+    assert nullable_real.nullable is True
 
     not_nullable_real = RealField(nullable=False)
-    assert not_nullable_real.nullable == False
+    assert not_nullable_real.nullable is False
 
     nullable_bool = BooleanField()
-    assert nullable_bool.nullable == True
+    assert nullable_bool.nullable is True
 
     not_nullable_bool = BooleanField(nullable=False)
-    assert not_nullable_bool.nullable == False
+    assert not_nullable_bool.nullable is False
+
+    nullable_datetime = DateTimeField()
+    assert nullable_datetime.nullable is True
+
+    not_nullable_datetime = DateTimeField(nullable=False)
+    assert not_nullable_datetime.nullable is False
 
 def test_default() -> None:
     default_int = IntegerField(default=1)
@@ -109,14 +128,20 @@ def test_default() -> None:
     not_default_bool = BooleanField()
     assert not_default_bool.default is _MISSING  
 
+    default_datetime = DateTimeField(default=datetime(2026, 10, 25))
+    assert default_datetime.default == datetime(2026, 10, 25)
+
+    not_default_datetime = DateTimeField()
+    assert not_default_datetime.default is _MISSING
+
 def test_setters() -> None:
-    point = TestPoint.__new__(TestPoint)
+    point = Point.__new__(Point)
     point.name, point.x, point.y = 'A', 1, 2.4
     assert (point.name == 'A' and 
             point.x == 1.0 and 
             point.y == 2.4)
 
-    user = TestUser.__new__(TestUser)
+    user = User.__new__(User)
     user.id, user.name, user.age, user.count, user.note, user.is_student = 1, 'Darin', 21, 67, 'foo bar', True
     assert (user.id == 1 and 
             user.name == 'Darin' and 
@@ -125,8 +150,12 @@ def test_setters() -> None:
             user.note == 'foo bar' 
             and user.is_student is True)
 
+    event = Event.__new__(Event)
+    event.id, event.timestamp = 1, datetime(2026, 10, 25, 6, 30, 15)
+    assert event.id == 1 and event.timestamp == datetime(2026, 10, 25, 6, 30, 15)
+    
 def test_validate() -> None:
-    point = TestPoint.__new__(TestPoint)
+    point = Point.__new__(Point)
     # testing text and real field types
     try: 
         point.name = "Name is too long"
@@ -146,7 +175,7 @@ def test_validate() -> None:
     except TypeError:
         pass
 
-    user = TestUser.__new__(TestUser)
+    user = User.__new__(User)
     # testing integer and boolean field types
     try:
         user.age = 'Not an integer'
@@ -159,29 +188,42 @@ def test_validate() -> None:
         assert False, 'Expected TypeError but none raised'
     except TypeError:
         pass
+
+    event = Event.__new__(Event)
+    # testing timestamp field type
+    try:
+        event.timestamp = 'Not a timestamp'
+        assert False, 'Expected TypeError not none raised'
+    except TypeError:
+        pass
         
 # ============ Model Tests ============
 
 def test_model_attr() -> None:
-    for field in TestPoint._fields.values():
-        assert isinstance(field, Field) == True
+    for field in Point._fields.values():
+        assert isinstance(field, Field) is True
 
-    for field in TestUser._fields.values():
-        assert isinstance(field, Field) == True
+    for field in User._fields.values():
+        assert isinstance(field, Field) is True
 
-    assert TestPoint._table_name == 'testpoint'
-    assert TestUser._table_name == 'testuser'
+    for field in Event._fields.values():
+        assert isinstance(field, Field) is True
 
-    assert TestPoint._pk == 'name'
-    assert TestUser._pk == 'id'
+    assert Point._table_name == 'point'
+    assert User._table_name == 'user'
+    assert Event._table_name == 'event'
+
+    assert Point._pk == 'name'
+    assert User._pk == 'id'
+    assert Event._pk == 'id'
 
 def test_base_model() -> None:
-    point = TestPoint(name='A', y=2.5)
+    point = Point(name='A', y=2.5)
     assert point.name == 'A'
     assert point.x == 0.0
     assert point.y == 2.5
 
-    user = TestUser(id=1, name='Darin', age=21)
+    user = User(id=1, name='Darin', age=21)
     assert user.id == 1
     assert user.name == 'Darin'
     assert user.age == 21
@@ -189,27 +231,31 @@ def test_base_model() -> None:
     assert user.note is None
     assert user.is_student is False
 
+    event = Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15))
+    assert event.id == 1
+    assert event.timestamp == datetime(2026, 10, 25, 6, 30, 15)
+
 def test_base_model_validation() -> None:
     try:
-        TestPoint(name='Name too long') # provided string value exceeds the max length of string field
+        Point(name='Name too long') # provided string value exceeds the max length of string field
         assert False, 'Expected ValueError but got none'
     except ValueError:
         pass
 
     try:
-        TestPoint(name=10) # invalid type (name should be str)
+        Point(name=10) # invalid type (name should be str)
         assert False, 'Expected ValueError but got none'
     except TypeError:
         pass
 
     try:
-        TestUser(id='invalid type', name='Darin') # invalid type (id should be int)
+        User(id='invalid type', name='Darin') # invalid type (id should be int)
         assert False, 'Expected TypeError but got none'
     except TypeError:
         pass
 
     try:
-        TestUser(id=1, nme='Darin') # nme is not a field (should be name)
+        User(id=1, nme='Darin') # nme is not a field (should be name)
         assert False, 'Expected AttributeError but got none'
     except AttributeError:
         pass
@@ -217,101 +263,145 @@ def test_base_model_validation() -> None:
 # ============ SQL Generation Tests ============
 
 def test_create_table_sql_generation() -> None:
-    point_sql_cmd = TestPoint._create_table_sql()
-    assert point_sql_cmd == 'CREATE TABLE IF NOT EXISTS testpoint (name TEXT PRIMARY KEY NOT NULL, x REAL, y REAL)'
+    point_sql_cmd = Point._create_table_sql()
+    assert point_sql_cmd == 'CREATE TABLE IF NOT EXISTS point (name TEXT PRIMARY KEY NOT NULL, x REAL, y REAL)'
 
-    user_sql_cmd = TestUser._create_table_sql()
-    assert user_sql_cmd == 'CREATE TABLE IF NOT EXISTS testuser (id INTEGER PRIMARY KEY NOT NULL, name TEXT, age INTEGER, count INTEGER, note TEXT, is_student BOOLEAN)'
+    user_sql_cmd = User._create_table_sql()
+    assert user_sql_cmd == 'CREATE TABLE IF NOT EXISTS user (id INTEGER PRIMARY KEY NOT NULL, name TEXT, age INTEGER, count INTEGER, note TEXT, is_student BOOLEAN)'
+
+    event_sql_cmd = Event._create_table_sql()
+    assert event_sql_cmd == 'CREATE TABLE IF NOT EXISTS event (id INTEGER PRIMARY KEY NOT NULL, timestamp DATETIME NOT NULL)'
 
 def test_insert_sql_generation() -> None:
-    point = TestPoint(name='A', x=1, y=2.5)
+    point = Point(name='A', x=1, y=2.5)
     sql_cmd, values = point._insert()
-    assert sql_cmd == 'INSERT INTO testpoint (name, x, y) VALUES (?, ?, ?)'
+    assert sql_cmd == 'INSERT INTO point (name, x, y) VALUES (?, ?, ?)'
     assert values == ('A', 1.0, 2.5)
 
-    user = TestUser(id=1, name='Darin', age=21)
+    user = User(id=1, name='Darin', age=21)
     sql_cmd, values = user._insert()
-    assert sql_cmd == 'INSERT INTO testuser (id, name, age, count, note, is_student) VALUES (?, ?, ?, ?, ?, ?)'
+    assert sql_cmd == 'INSERT INTO user (id, name, age, count, note, is_student) VALUES (?, ?, ?, ?, ?, ?)'
     assert values == (1, 'Darin', 21, 0, None, 0)
+
+    event = Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15))
+    sql_cmd, values = event._insert()
+    assert sql_cmd == 'INSERT INTO event (id, timestamp) VALUES (?, ?)'
+    assert values == (1, '2026-10-25T06:30:15')
 
 def test_select_sql_generation() -> None:
     # select one
-    point_sql_cmd, values = TestPoint._select('A')
-    assert point_sql_cmd == 'SELECT name, x, y FROM testpoint WHERE name = ?'
+    point_sql_cmd, values = Point._select('A')
+    assert point_sql_cmd == 'SELECT name, x, y FROM point WHERE name = ?'
     assert values == ('A',)
 
-    user_sql_cmd, values = TestUser._select(1)
-    assert user_sql_cmd == 'SELECT id, name, age, count, note, is_student FROM testuser WHERE id = ?'
+    user_sql_cmd, values = User._select(1)
+    assert user_sql_cmd == 'SELECT id, name, age, count, note, is_student FROM user WHERE id = ?'
+    assert values == (1,)
+
+    event_sql_cmd, values = Event._select(1)
+    assert event_sql_cmd == 'SELECT id, timestamp FROM event WHERE id = ?'
     assert values == (1,)
 
     # select all
-    point_sql_cmd, values = TestPoint._select_all()
-    assert point_sql_cmd == 'SELECT name, x, y FROM testpoint'
+    point_sql_cmd, values = Point._select_all()
+    assert point_sql_cmd == 'SELECT name, x, y FROM point'
     assert values == ()
 
-    user_sql_cmd, values = TestUser._select_all()
-    assert user_sql_cmd == 'SELECT id, name, age, count, note, is_student FROM testuser'
+    user_sql_cmd, values = User._select_all()
+    assert user_sql_cmd == 'SELECT id, name, age, count, note, is_student FROM user'
     assert values == ()
+
+    event_sql_cmd, values = Event._select_all()
+    assert event_sql_cmd == 'SELECT id, timestamp FROM event'
+    assert values == ()    
 
 def test_update_sql_generation() -> None:
-    point = TestPoint(name='A', x=1, y=2)
+    point = Point(name='A', x=1, y=2)
     point_sql_cmd, values = point._update(name='B', x=2)
-    assert point_sql_cmd == 'UPDATE testpoint SET name = ?, x = ? WHERE name = ?'
+    assert point_sql_cmd == 'UPDATE point SET name = ?, x = ? WHERE name = ?'
     assert values == ('B', 2, 'A')
 
-    user = TestUser(id=1, name='Darin', age=21)
+    user = User(id=1, name='Darin', age=21)
     user_sql_cmd, values = user._update(note='likes space')
-    assert user_sql_cmd == 'UPDATE testuser SET note = ? WHERE id = ?'
+    assert user_sql_cmd == 'UPDATE user SET note = ? WHERE id = ?'
     assert values == ('likes space', 1)
+
+    event = Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15))
+    sql_cmd, values = event._update(timestamp=datetime(2027, 1, 1))
+    assert sql_cmd == 'UPDATE event SET timestamp = ? WHERE id = ?'
+    assert values == ('2027-01-01T00:00:00', 1)
 
     # invalid fields
     try:
-        point_sql_cmd, values = point._update(nonexistent_key='I do not exist')
+        point._update(nonexistent_key='I do not exist')
         assert False, 'Expected ValueError but got none'
     except ValueError:
         pass
 
     try:
-        user_sql_cmd, values = user._update(nonexistent_key='I do not exist')
+        user._update(nonexistent_key='I do not exist')
+        assert False, 'Expected ValueError but got none'
+    except ValueError:
+        pass
+
+    try:
+        event._update(nonexistent_key='I do no exist')
         assert False, 'Expected ValueError but got none'
     except ValueError:
         pass
 
     # invalid types
     try:
-        point_sql_cmd, values = point._update(x='I am an int, not a string!')
+        point._update(x='I am an int, not a string!')
         assert False, 'Expected TypeError but got none'
     except TypeError:
         pass
 
     try:
-        user_sql_cmd, values = user._update(age='I am an int, not a string!')
+        user._update(age='I am an int, not a string!')
+        assert False, 'Expected TypeError but got none'
+    except TypeError:
+        pass
+
+    try: 
+        event.update(timestamp='I am a datetime, not a string!')
         assert False, 'Expected TypeError but got none'
     except TypeError:
         pass
 
     # no fields passed in
     try:
-        point_sql_cmd, values = point._update()
+        point._update()
         assert False, 'Expected ValueError but got none'
     except ValueError:
         pass
 
     try:
-        user_sql_cmd, values = user._update()
+        user._update()
+        assert False, 'Expected ValueError but got none'
+    except ValueError:
+        pass
+
+    try:
+        event._update()
         assert False, 'Expected ValueError but got none'
     except ValueError:
         pass
 
 def test_delete_sql_generation() -> None:
-    point = TestPoint(name='A', x=1, y=2.5)
+    point = Point(name='A', x=1, y=2.5)
     point_sql_cmd, values = point._delete()
-    assert point_sql_cmd == 'DELETE FROM testpoint WHERE name = ?'
+    assert point_sql_cmd == 'DELETE FROM point WHERE name = ?'
     assert values == ('A',)
 
-    user = TestUser(id=1, name='Darin', age=21)
+    user = User(id=1, name='Darin', age=21)
     user_sql_cmd, values = user._delete()
-    assert user_sql_cmd == 'DELETE FROM testuser WHERE id = ?'
+    assert user_sql_cmd == 'DELETE FROM user WHERE id = ?'
+    assert values == (1,)
+
+    event = Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15))
+    sql_cmd, values = event._delete()
+    assert sql_cmd == 'DELETE FROM event WHERE id = ?'
     assert values == (1,)
 
 # ============ SQL API Tests ============
@@ -319,8 +409,9 @@ def test_delete_sql_generation() -> None:
 @pytest.fixture
 def db():
     Model.connect(':memory:')
-    TestPoint.create_table()
-    TestUser.create_table()
+    Point.create_table()
+    User.create_table()
+    Event.create_table()
     yield
     Model._connection.close()
     Model._connection = None
@@ -337,82 +428,93 @@ def test_disconnect() -> None:
     Model.disconnect()
     assert Model._connection is None
 
-def test_create_table() -> None:
-    Model.connect(':memory:')
-    TestPoint.create_table()
-    TestUser.create_table()
-
+def test_create_table(db) -> None:
     cursor = Model._connection.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables = cursor.fetchall()
-    assert ('testpoint',) in tables
-    assert ('testuser',) in tables
-
-    Model._connection.close()
-    Model._connection = None
+    assert ('point',) in tables
+    assert ('user',) in tables
+    assert ('event',) in tables
 
 def test_save(db) -> None:
-    point = TestPoint(name='A', x=1, y=2.5)
-    point.save()
-    user = TestUser(id=1, name='Darin', age=21)
-    user.save()
+    Point(name='A', x=1, y=2.5).save()
+    User(id=1, name='Darin', age=21).save()
+    Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15)).save()
 
     # verify the row is in the database
     cursor = Model._connection.cursor()
-    cursor.execute("SELECT name, x, y FROM testpoint WHERE name = 'A'")
+    cursor.execute("SELECT name, x, y FROM point WHERE name = 'A'")
     row = cursor.fetchone()
     assert row == ('A', 1.0, 2.5)
 
-    cursor.execute('SELECT id, name, age FROM testuser WHERE id = 1')
+    cursor.execute('SELECT id, name, age FROM user WHERE id = 1')
     row = cursor.fetchone()
     assert row == (1, 'Darin', 21)
 
+    cursor.execute('SELECT id, timestamp FROM event WHERE id = 1')
+    row = cursor.fetchone()
+    assert row == (1, '2026-10-25T06:30:15')
+
 def test_get(db) -> None:
-    TestPoint(name='A', x=1.0, y=2.5).save()
-    TestUser(id=1, name='Darin', age=21).save()
+    Point(name='A', x=1.0, y=2.5).save()
+    User(id=1, name='Darin', age=21).save()
+    Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15)).save()
 
-    point = TestPoint.get('A')
-    user = TestUser.get(1)
+    point = Point.get('A')
+    user = User.get(1)
+    event = Event.get(1)
 
-    assert isinstance(point, TestPoint)
+    assert isinstance(point, Point)
     assert point.name == 'A' and point.x == 1.0 and point.y == 2.5
-    assert isinstance(user, TestUser)
+    assert isinstance(user, User)
     assert user.id == 1 and user.name == 'Darin' and user.age == 21
+    assert isinstance(event, Event)
+    assert event.id == 1 and event.timestamp == datetime(2026, 10, 25, 6, 30, 15)
 
 def test_get_all(db) -> None:
-    TestPoint(name='A').save()
-    TestPoint(name='B', x=1.0, y=2.5).save()
-    TestPoint(name='C', x=1.7, y=2).save()
+    Point(name='A').save()
+    Point(name='B', x=1.0, y=2.5).save()
+    Point(name='C', x=1.7, y=2).save()
 
-    points = TestPoint.get_all()
-    assert all(isinstance(point, TestPoint) for point in points)
+    points = Point.get_all()
+    assert all(isinstance(point, Point) for point in points)
     assert points[0].name == 'A' and points[0].x == 0.0 and points[0].y == 0.0
     assert points[1].name == 'B' and points[1].x == 1.0 and points[1].y == 2.5
     assert points[2].name == 'C' and points[2].x == 1.7 and points[2].y == 2.0
 
-    TestUser(id=1, name='Darin', age=21).save()
-    TestUser(id=2, name='John', age=22).save()
-    TestUser(id=3, name='Jane', age=23).save()
+    User(id=1, name='Darin', age=21).save()
+    User(id=2, name='John', age=22).save()
+    User(id=3, name='Jane', age=23).save()
 
-    users = TestUser.get_all()
-    assert all(isinstance(user, TestUser) for user in users)
+    users = User.get_all()
+    assert all(isinstance(user, User) for user in users)
     assert users[0].id == 1 and users[0].name == 'Darin' and users[0].age == 21
     assert users[1].id == 2 and users[1].name == 'John' and users[1].age == 22
     assert users[2].id == 3 and users[2].name == 'Jane' and users[2].age == 23
 
+    Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15)).save()
+    Event(id=2, timestamp=datetime(2026, 10, 25, 7, 45, 20)).save()
+    Event(id=3, timestamp=datetime(2026, 10, 25, 9, 00, 25)).save()
+
+    events = Event.get_all()
+    assert all(isinstance(event, Event) for event in events)
+    assert events[0].id == 1 and events[0].timestamp == datetime(2026, 10, 25, 6, 30, 15)
+    assert events[1].id == 2 and events[1].timestamp == datetime(2026, 10, 25, 7, 45, 20)
+    assert events[2].id == 3 and events[2].timestamp == datetime(2026, 10, 25, 9, 00, 25)
+
 def test_update(db) -> None:
-    point = TestPoint(name='A', x=1.25, y=2.5)
+    point = Point(name='A', x=1.25, y=2.5)
     point.save()
     point.update(x=0.0)
-    updated_point = TestPoint.get('A')
+    updated_point = Point.get('A')
     assert (updated_point.name == 'A' and
             updated_point.x == 0.0 and
             updated_point.y == 2.5)
 
-    user = TestUser(id=1, name='Darin', age=21)
+    user = User(id=1, name='Darin', age=21)
     user.save()
     user.update(name='Bob', age=22, count=5, note='Bob the builder', is_student=True)
-    updated_user = TestUser.get(1)
+    updated_user = User.get(1)
     assert (updated_user.id == 1 and 
             updated_user.name == 'Bob' and 
             updated_user.age == 22 and
@@ -420,18 +522,30 @@ def test_update(db) -> None:
             updated_user.note == 'Bob the builder' and
             updated_user.is_student is True)
 
-def test_delete(db) -> None:
-    TestPoint(name='A').save()
-    TestUser(id=1, name='Darin', age=21).save()
+    event = Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15))
+    event.save()
+    event.update(timestamp=datetime(2027, 1, 1))
+    updated_event = Event.get(1)
+    assert updated_event.id == 1 and updated_event.timestamp == datetime(2027, 1, 1)
 
-    point = TestPoint.get('A')
+def test_delete(db) -> None:
+    Point(name='A').save()
+    User(id=1, name='Darin', age=21).save()
+    Event(id=1, timestamp=datetime(2026, 10, 25, 6, 30, 15)).save()
+
+    point = Point.get('A')
     assert point.name == 'A' and point.x == 0.0 and point.y == 0.0
-    user = TestUser.get(1)
+    user = User.get(1)
     assert user.id == 1 and user.name == 'Darin' and user.age == 21
+    event = Event.get(1)
+    assert event.id == 1 and event.timestamp == datetime(2026, 10, 25, 6, 30, 15)
 
     point.delete()
     user.delete()
-    point = TestPoint.get('A')
-    user = TestUser.get(1)
+    event.delete()
+    point = Point.get('A')
+    user = User.get(1)
+    event = Event.get(1)
     assert point is None
     assert user is None
+    assert event is None

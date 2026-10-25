@@ -1,4 +1,5 @@
 from typing import Any
+from datetime import datetime
 
 # means no default, value is required
 # used instead of None because None maps to NULL in SQL
@@ -90,7 +91,7 @@ class BooleanField(Field):
     def __init__(self, primary_key=False, nullable=True, default=_MISSING) -> None:
         super().__init__(primary_key=primary_key, nullable=nullable, default=default)
 
-    def _validate_type(self, value):
+    def _validate_type(self, value) -> None:
         if not isinstance(value, bool):
             raise TypeError(f'{value!r} does not match to the type {self.sql_type}')
 
@@ -105,4 +106,27 @@ class BooleanField(Field):
             return None
 
         return bool(value)
+    
+# to represent a date time field
+class DateTimeField(Field):
+    sql_type = 'DATETIME'
+
+    def __init__(self, primary_key=False, nullable=True, default=_MISSING) -> None:
+        super().__init__(primary_key=primary_key, nullable=nullable, default=default)
+
+    def _validate_type(self, value) -> None:
+        if not isinstance(value, datetime):
+            raise TypeError(f'{value!r} does not match to the type {self.sql_type}')
+
+    def to_db(self, value: datetime) -> str | None:
+        if value is None:
+            return None
+
+        return value.isoformat()
+
+    def from_db(self, value) -> datetime | None:
+        if value is None:
+            return None
+
+        return datetime.fromisoformat(value)
     

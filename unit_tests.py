@@ -3,6 +3,7 @@ import pytest
 from fields import *
 from fields import _MISSING
 from model import *
+from expressions import *
 
 # ============ Test Classes ============
 
@@ -549,3 +550,10 @@ def test_delete(db) -> None:
     assert point is None
     assert user is None
     assert event is None
+
+# ============ Expression Tests ============
+def test_exp_cmd() -> None:
+    exp = Expression(field=User.age, operator='=', value=21)
+    sql_cmd, params = exp._get_sql()
+    assert sql_cmd == 'age = ?'
+    assert params == (21, )

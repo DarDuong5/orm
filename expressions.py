@@ -1,0 +1,19 @@
+from typing import Any
+from model import SQLStatement
+from fields import Field
+
+# to represent an expression
+class Expression:
+    def __init__(self, field: Field, operator, value: Any): # field is the left operand, value is the right operand
+        self.field = field
+        self.operator = operator
+        self.value = value
+
+    def _get_sql(self) -> SQLStatement:
+        sql_cmd = f'{self.field.storage_name} {self.operator} ?'
+        params = (self.value,)
+        return sql_cmd, params
+
+    def _validate(self) -> None:
+        ...
+

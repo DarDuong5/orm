@@ -15,5 +15,6 @@ class Expression:
         return sql_cmd, params
 
     def _validate(self) -> None:
-        ...
+        self.field._validate_type(self.value)
+
 

@@ -557,3 +557,21 @@ def test_exp_cmd() -> None:
     sql_cmd, params = exp._get_sql()
     assert sql_cmd == 'age = ?'
     assert params == (21, )
+
+def test_exp_validate() -> None:
+    # valid type check
+    try:
+        exp = Expression(field=User.age, operator='=', value=21)
+        exp._validate()
+        assert True
+    except TypeError:
+        assert False, 'Did not expect TypeError but got one'
+
+    # invalid type check
+    try:
+        exp = Expression(field=User.age, operator='=', value='Not an int')
+        exp._validate()
+        assert False, 'Expected TypeError but got none'
+    except TypeError:
+        pass
+

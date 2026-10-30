@@ -576,6 +576,9 @@ def test_exp_validate() -> None:
         pass
 
 # ============ Field Expression Tests ============
+
+# Note: for inequality checks, SQLite only compares string, integer, float, and datetime fields
+
 def test_gt() -> None:
     user_exp = User.age > 21
     assert isinstance(user_exp, Expression)
@@ -588,6 +591,24 @@ def test_gt() -> None:
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x > ?'
     assert params_point == (1.75,)
+
+    user_exp = User.name > 'Darin'
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'name > ?'
+    assert params_user == ('Darin',)
+
+    point_exp = Point.name > 'A'
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'name > ?'
+    assert params_point == ('A',)
+
+    event_exp = Event.timestamp > datetime(2027, 1, 1)
+    assert isinstance(event_exp, Expression)
+    sql_cmd_event, params_event = event_exp._get_sql()
+    assert sql_cmd_event == 'timestamp > ?'
+    assert params_event == ('2027-01-01T00:00:00',)
 
 def test_lt() -> None:
     user_exp = User.age < 21
@@ -602,6 +623,24 @@ def test_lt() -> None:
     assert sql_cmd_point == 'x < ?'
     assert params_point == (1.75,)
 
+    user_exp = User.name < 'Darin'
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'name < ?'
+    assert params_user == ('Darin',)
+
+    point_exp = Point.name < 'A'
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'name < ?'
+    assert params_point == ('A',)
+
+    event_exp = Event.timestamp < datetime(2027, 1, 1)
+    assert isinstance(event_exp, Expression)
+    sql_cmd_event, params_event = event_exp._get_sql()
+    assert sql_cmd_event == 'timestamp < ?'
+    assert params_event == ('2027-01-01T00:00:00',)
+
 def test_ge() -> None:
     user_exp = User.age >= 21
     assert isinstance(user_exp, Expression)
@@ -614,6 +653,24 @@ def test_ge() -> None:
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x >= ?'
     assert params_point == (1.75,)
+
+    user_exp = User.name >= 'Darin'
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'name >= ?'
+    assert params_user == ('Darin',)
+
+    point_exp = Point.name >= 'A'
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'name >= ?'
+    assert params_point == ('A',)
+
+    event_exp = Event.timestamp >= datetime(2027, 1, 1)
+    assert isinstance(event_exp, Expression)
+    sql_cmd_event, params_event = event_exp._get_sql()
+    assert sql_cmd_event == 'timestamp >= ?'
+    assert params_event == ('2027-01-01T00:00:00',)
 
 def test_le() -> None:
     user_exp = User.age <= 21
@@ -628,6 +685,24 @@ def test_le() -> None:
     assert sql_cmd_point == 'x <= ?'
     assert params_point == (1.75,)
 
+    user_exp = User.name <= 'Darin'
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'name <= ?'
+    assert params_user == ('Darin',)
+
+    point_exp = Point.name <= 'A'
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'name <= ?'
+    assert params_point == ('A',)
+
+    event_exp = Event.timestamp <= datetime(2027, 1, 1)
+    assert isinstance(event_exp, Expression)
+    sql_cmd_event, params_event = event_exp._get_sql()
+    assert sql_cmd_event == 'timestamp <= ?'
+    assert params_event == ('2027-01-01T00:00:00',)
+
 def test_eq() -> None:
     user_exp = User.name == 'Darin'
     assert isinstance(user_exp, Expression)
@@ -641,7 +716,43 @@ def test_eq() -> None:
     assert sql_cmd_point == 'name = ?'
     assert params_point == ('A',)
 
+    user_exp = User.age == 21
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'age = ?'
+    assert params_user == (21,)
+
+    point_exp = Point.x == 1.75
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'x = ?'
+    assert params_point == (1.75,)
+
+    event_exp = Event.timestamp == datetime(2027, 1, 1)
+    assert isinstance(event_exp, Expression)
+    sql_cmd_event, params_event = event_exp._get_sql()
+    assert sql_cmd_event == 'timestamp = ?'
+    assert params_event == ('2027-01-01T00:00:00',)
+
+    user_exp = User.is_student == True
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'is_student = ?'
+    assert params_user == (1,)   
+
 def test_ne() -> None:
+    user_exp = User.name != 'Darin'
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'name != ?'
+    assert params_user == ('Darin',)
+
+    point_exp = Point.name != 'A'
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'name != ?'
+    assert params_point == ('A',)
+
     user_exp = User.age != 21
     assert isinstance(user_exp, Expression)
     sql_cmd_user, params_user = user_exp._get_sql()
@@ -654,4 +765,14 @@ def test_ne() -> None:
     assert sql_cmd_point == 'x != ?'
     assert params_point == (1.75,)
 
-    
+    event_exp = Event.timestamp != datetime(2027, 1, 1)
+    assert isinstance(event_exp, Expression)
+    sql_cmd_event, params_event = event_exp._get_sql()
+    assert sql_cmd_event == 'timestamp != ?'
+    assert params_event == ('2027-01-01T00:00:00',)
+
+    user_exp = User.is_student != True
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'is_student != ?'
+    assert params_user == (1,)   

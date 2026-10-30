@@ -14,7 +14,7 @@ class Expression:
     # returns the sql statement for the expression
     def _get_sql(self) -> SQLStatement:
         sql_cmd = f'{self.field.storage_name} {self.operator} ?'
-        params = (self.value,)
+        params = (self.field.to_db(self.value),)
         return sql_cmd, params
 
     # ensure that the field type and the value type are the same

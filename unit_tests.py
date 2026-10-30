@@ -575,3 +575,83 @@ def test_exp_validate() -> None:
     except TypeError:
         pass
 
+# ============ Field Expression Tests ============
+def test_gt() -> None:
+    user_exp = User.age > 21
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'age > ?'
+    assert params_user == (21,)
+
+    point_exp = Point.x > 1.75
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'x > ?'
+    assert params_point == (1.75,)
+
+def test_lt() -> None:
+    user_exp = User.age < 21
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'age < ?'
+    assert params_user == (21,)
+
+    point_exp = Point.x < 1.75
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'x < ?'
+    assert params_point == (1.75,)
+
+def test_ge() -> None:
+    user_exp = User.age >= 21
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'age >= ?'
+    assert params_user == (21,)
+
+    point_exp = Point.x >= 1.75
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'x >= ?'
+    assert params_point == (1.75,)
+
+def test_le() -> None:
+    user_exp = User.age <= 21
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'age <= ?'
+    assert params_user == (21,)
+
+    point_exp = Point.x <= 1.75
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'x <= ?'
+    assert params_point == (1.75,)
+
+def test_eq() -> None:
+    user_exp = User.name == 'Darin'
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'name = ?'
+    assert params_user == ('Darin',)
+
+    point_exp = Point.name == 'A'
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'name = ?'
+    assert params_point == ('A',)
+
+def test_ne() -> None:
+    user_exp = User.age != 21
+    assert isinstance(user_exp, Expression)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == 'age != ?'
+    assert params_user == (21,)
+
+    point_exp = Point.x != 1.75
+    assert isinstance(point_exp, Expression)
+    sql_cmd_point, params_point = point_exp._get_sql()
+    assert sql_cmd_point == 'x != ?'
+    assert params_point == (1.75,)
+
+    

@@ -1,5 +1,6 @@
 from typing import Any
 from datetime import datetime
+from expressions import Expression
 
 # means no default, value is required
 # used instead of None because None maps to NULL in SQL
@@ -47,6 +48,30 @@ class Field:
     def from_db(self, value):
         return value
 
+    def __gt__(self, value) -> Expression:
+        self._validate_type(value)
+        return Expression(self, '>', value)
+
+    def __lt__(self, value) -> Expression:
+        self._validate_type(value)
+        return Expression(self, '<', value)
+
+    def __le__(self, value) -> Expression:
+        self._validate_type(value)
+        return Expression(self, '<=', value)
+
+    def __ge__(self, value) -> Expression:
+        self._validate_type(value)
+        return Expression(self, '>=', value)
+
+    def __eq__(self, value) -> Expression:
+        self._validate_type(value)
+        return Expression(self, '=', value)
+        
+    def __ne__(self, value) -> Expression:
+        self._validate_type(value)
+        return Expression(self, '!=', value)
+        
 # to represent an integer field
 class IntegerField(Field):
     sql_type = 'INTEGER'

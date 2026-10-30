@@ -196,3 +196,7 @@ class Model(metaclass=ModelMeta):
         cursor.execute(sql_cmd, values)
         self._connection.commit()
 
+    # stub
+    def where(self):
+        ...
+

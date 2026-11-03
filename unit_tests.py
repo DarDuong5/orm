@@ -564,11 +564,13 @@ def test_where(db) -> None:
     user4.save()
     user5.save()
     user6.save()
+
+    # testing one expression
     rows = User.where(User.age >= 22)
     assert rows is not None
     assert len(rows) == 4
     assert (isinstance(row, User) for row in rows)
-    names = [row.name for row in rows]
+    names = {row.name for row in rows}
     assert 'Darin' not in names
     assert 'David' in names
     assert 'Paul' in names
@@ -576,9 +578,22 @@ def test_where(db) -> None:
     assert 'Nate' in names
     assert 'Brysen' in names
 
-# ============ Expression Tests ============
+    # testing compound expression
+    rows = User.where((User.age == 21) | (User.age == 23))
+    assert rows is not None
+    assert len(rows) == 3
+    assert (isinstance(row, User) for row in rows)
+    names = {row.name for row in rows}
+    assert 'Darin' in names
+    assert 'David' not in names
+    assert 'Paul' in names
+    assert 'Chris' in names
+    assert 'Nate' not in names
+    assert 'Brysen' not in names
+
+# ============ Comparison Tests ============
 def test_exp_cmd() -> None:
-    exp = Expression(field=User.age, operator='=', value=21)
+    exp = Comparison(field=User.age, operator='=', value=21)
     sql_cmd, params = exp._get_sql()
     assert sql_cmd == 'age = ?'
     assert params == (21, )
@@ -586,7 +601,7 @@ def test_exp_cmd() -> None:
 def test_exp_validate() -> None:
     # valid type check
     try:
-        exp = Expression(field=User.age, operator='=', value=21)
+        exp = Comparison(field=User.age, operator='=', value=21)
         exp._validate()
         assert True
     except TypeError:
@@ -594,210 +609,240 @@ def test_exp_validate() -> None:
 
     # invalid type check
     try:
-        exp = Expression(field=User.age, operator='=', value='Not an int')
+        exp = Comparison(field=User.age, operator='=', value='Not an int')
         exp._validate()
         assert False, 'Expected TypeError but got none'
     except TypeError:
         pass
 
-# ============ Field Expression Tests ============
+# ============ Expression Tests ============
 
 # Note: for inequality checks, SQLite only compares string, integer, float, and datetime fields
 
 def test_gt() -> None:
     user_exp = User.age > 21
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'age > ?'
     assert params_user == (21,)
 
     point_exp = Point.x > 1.75
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x > ?'
     assert params_point == (1.75,)
 
     user_exp = User.name > 'Darin'
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'name > ?'
     assert params_user == ('Darin',)
 
     point_exp = Point.name > 'A'
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'name > ?'
     assert params_point == ('A',)
 
     event_exp = Event.timestamp > datetime(2027, 1, 1)
-    assert isinstance(event_exp, Expression)
+    assert isinstance(event_exp, Comparison)
     sql_cmd_event, params_event = event_exp._get_sql()
     assert sql_cmd_event == 'timestamp > ?'
     assert params_event == ('2027-01-01T00:00:00',)
 
 def test_lt() -> None:
     user_exp = User.age < 21
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'age < ?'
     assert params_user == (21,)
 
     point_exp = Point.x < 1.75
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x < ?'
     assert params_point == (1.75,)
 
     user_exp = User.name < 'Darin'
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'name < ?'
     assert params_user == ('Darin',)
 
     point_exp = Point.name < 'A'
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'name < ?'
     assert params_point == ('A',)
 
     event_exp = Event.timestamp < datetime(2027, 1, 1)
-    assert isinstance(event_exp, Expression)
+    assert isinstance(event_exp, Comparison)
     sql_cmd_event, params_event = event_exp._get_sql()
     assert sql_cmd_event == 'timestamp < ?'
     assert params_event == ('2027-01-01T00:00:00',)
 
 def test_ge() -> None:
     user_exp = User.age >= 21
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'age >= ?'
     assert params_user == (21,)
 
     point_exp = Point.x >= 1.75
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x >= ?'
     assert params_point == (1.75,)
 
     user_exp = User.name >= 'Darin'
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'name >= ?'
     assert params_user == ('Darin',)
 
     point_exp = Point.name >= 'A'
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'name >= ?'
     assert params_point == ('A',)
 
     event_exp = Event.timestamp >= datetime(2027, 1, 1)
-    assert isinstance(event_exp, Expression)
+    assert isinstance(event_exp, Comparison)
     sql_cmd_event, params_event = event_exp._get_sql()
     assert sql_cmd_event == 'timestamp >= ?'
     assert params_event == ('2027-01-01T00:00:00',)
 
 def test_le() -> None:
     user_exp = User.age <= 21
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'age <= ?'
     assert params_user == (21,)
 
     point_exp = Point.x <= 1.75
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x <= ?'
     assert params_point == (1.75,)
 
     user_exp = User.name <= 'Darin'
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'name <= ?'
     assert params_user == ('Darin',)
 
     point_exp = Point.name <= 'A'
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'name <= ?'
     assert params_point == ('A',)
 
     event_exp = Event.timestamp <= datetime(2027, 1, 1)
-    assert isinstance(event_exp, Expression)
+    assert isinstance(event_exp, Comparison)
     sql_cmd_event, params_event = event_exp._get_sql()
     assert sql_cmd_event == 'timestamp <= ?'
     assert params_event == ('2027-01-01T00:00:00',)
 
 def test_eq() -> None:
     user_exp = User.name == 'Darin'
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'name = ?'
     assert params_user == ('Darin',)
 
     point_exp = Point.name == 'A'
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'name = ?'
     assert params_point == ('A',)
 
     user_exp = User.age == 21
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'age = ?'
     assert params_user == (21,)
 
     point_exp = Point.x == 1.75
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x = ?'
     assert params_point == (1.75,)
 
     event_exp = Event.timestamp == datetime(2027, 1, 1)
-    assert isinstance(event_exp, Expression)
+    assert isinstance(event_exp, Comparison)
     sql_cmd_event, params_event = event_exp._get_sql()
     assert sql_cmd_event == 'timestamp = ?'
     assert params_event == ('2027-01-01T00:00:00',)
 
     user_exp = User.is_student == True
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'is_student = ?'
     assert params_user == (1,)   
 
 def test_ne() -> None:
     user_exp = User.name != 'Darin'
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'name != ?'
     assert params_user == ('Darin',)
 
     point_exp = Point.name != 'A'
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'name != ?'
     assert params_point == ('A',)
 
     user_exp = User.age != 21
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'age != ?'
     assert params_user == (21,)
 
     point_exp = Point.x != 1.75
-    assert isinstance(point_exp, Expression)
+    assert isinstance(point_exp, Comparison)
     sql_cmd_point, params_point = point_exp._get_sql()
     assert sql_cmd_point == 'x != ?'
     assert params_point == (1.75,)
 
     event_exp = Event.timestamp != datetime(2027, 1, 1)
-    assert isinstance(event_exp, Expression)
+    assert isinstance(event_exp, Comparison)
     sql_cmd_event, params_event = event_exp._get_sql()
     assert sql_cmd_event == 'timestamp != ?'
     assert params_event == ('2027-01-01T00:00:00',)
 
     user_exp = User.is_student != True
-    assert isinstance(user_exp, Expression)
+    assert isinstance(user_exp, Comparison)
     sql_cmd_user, params_user = user_exp._get_sql()
     assert sql_cmd_user == 'is_student != ?'
     assert params_user == (1,)   
+
+def test_and() -> None:
+    # testing single compound
+    user_exp = (User.name == 'Darin') & (User.age > 20)
+    assert isinstance(user_exp, Compound)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == '(name = ?) AND (age > ?)'
+    assert params_user == ('Darin', 20)
+
+    # testing multiple compound
+    user_exp = ((User.name == 'Darin') & (User.age > 20)) & (User.id == 1)
+    assert isinstance(user_exp, Compound)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == '((name = ?) AND (age > ?)) AND (id = ?)'
+    assert params_user == ('Darin', 20, 1)
+
+def test_or() -> None:
+    # testing single compound
+    user_exp = (User.name == 'Darin') | (User.age > 20)
+    assert isinstance(user_exp, Compound)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == '(name = ?) OR (age > ?)'
+    assert params_user == ('Darin', 20)
+
+    # testing multiple compound
+    user_exp = ((User.name == 'Darin') | (User.age > 20)) | (User.id == 1)
+    assert isinstance(user_exp, Compound)
+    sql_cmd_user, params_user = user_exp._get_sql()
+    assert sql_cmd_user == '((name = ?) OR (age > ?)) OR (id = ?)'
+    assert params_user == ('Darin', 20, 1)

@@ -2,7 +2,7 @@ from typing import Any, Self
 import sqlite3
 
 from fields import Field, _MISSING
-from expressions import Expression
+from expressions import Comparison
 
 type SQLStatement = tuple[str, tuple[Any, ...]]
 
@@ -203,7 +203,7 @@ class Model(metaclass=ModelMeta):
 
     # returns the clause command to filter data from a table
     @classmethod
-    def _where(cls, exp: Expression) -> SQLStatement:
+    def _where(cls, exp: Comparison) -> SQLStatement:
         select_all_sql, _, = cls._select_all()
         exp_sql_cmd, exp_value = exp._get_sql()
         sql_cmd = f'{select_all_sql} WHERE {exp_sql_cmd}'
@@ -211,7 +211,7 @@ class Model(metaclass=ModelMeta):
 
     # filters rows in the table after selection
     @classmethod
-    def where(cls, exp: Expression) -> list[Self]:
+    def where(cls, exp: Comparison) -> list[Self]:
         sql_cmd, values = cls._where(exp)
         cursor = cls._connection.cursor()
         cursor.execute(sql_cmd, values)

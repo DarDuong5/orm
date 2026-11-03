@@ -2,6 +2,7 @@ from typing import Any, Self
 import sqlite3
 
 from fields import Field, _MISSING
+from expressions import Expression
 
 type SQLStatement = tuple[str, tuple[Any, ...]]
 
@@ -134,15 +135,10 @@ class Model(metaclass=ModelMeta):
         sql_cmd = f'SELECT {', '.join(cls._fields.keys())} FROM {cls._table_name}'
         return sql_cmd, ()
 
-    # gets all of the rows in the table and creates and returns a list of instances of each one
+    # helper function for getting a list of instances
     @classmethod
-    def get_all(cls) -> list[Self]:
-        sql_cmd, values = cls._select_all()
-        cursor = cls._connection.cursor()
-        cursor.execute(sql_cmd, values)
-        rows = cursor.fetchall()
+    def _get_instances(cls, rows) -> list[Self]:
         instances = []
-
         for row in rows:
             kwargs = {}
             for name, value in zip(cls._fields.keys(), row):
@@ -151,6 +147,15 @@ class Model(metaclass=ModelMeta):
             instances.append(cls(**kwargs))
 
         return instances
+
+    # gets all of the rows in the table and creates and returns a list of instances of each one
+    @classmethod
+    def get_all(cls) -> list[Self]:
+        sql_cmd, values = cls._select_all()
+        cursor = cls._connection.cursor()
+        cursor.execute(sql_cmd, values)
+        rows = cursor.fetchall()
+        return cls._get_instances(rows)
        
     # returns the data manipulation command to update data from a table
     def _update(self, **fields) -> SQLStatement:
@@ -196,7 +201,19 @@ class Model(metaclass=ModelMeta):
         cursor.execute(sql_cmd, values)
         self._connection.commit()
 
-    # stub
-    def where(self):
-        ...
+    # returns the clause command to filter data from a table
+    @classmethod
+    def _where(cls, exp: Expression) -> SQLStatement:
+        select_all_sql, _, = cls._select_all()
+        exp_sql_cmd, exp_value = exp._get_sql()
+        sql_cmd = f'{select_all_sql} WHERE {exp_sql_cmd}'
+        return sql_cmd, exp_value
 
+    # filters rows in the table after selection
+    @classmethod
+    def where(cls, exp: Expression) -> list[Self]:
+        sql_cmd, values = cls._where(exp)
+        cursor = cls._connection.cursor()
+        cursor.execute(sql_cmd, values)
+        rows = cursor.fetchall()
+        return cls._get_instances(rows)

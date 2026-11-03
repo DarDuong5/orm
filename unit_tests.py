@@ -551,6 +551,31 @@ def test_delete(db) -> None:
     assert user is None
     assert event is None
 
+def test_where(db) -> None:
+    user1 = User(id=1, name='Darin', age=21)
+    user2 = User(id=2, name='David', age=22)
+    user3 = User(id=3, name='Paul', age=23)
+    user4 = User(id=4, name='Chris', age=21)
+    user5 = User(id=5, name='Nate', age=22)
+    user6 = User(id=6, name='Brysen', age=22)
+    user1.save()
+    user2.save()
+    user3.save()
+    user4.save()
+    user5.save()
+    user6.save()
+    rows = User.where(User.age >= 22)
+    assert rows is not None
+    assert len(rows) == 4
+    assert (isinstance(row, User) for row in rows)
+    names = [row.name for row in rows]
+    assert 'Darin' not in names
+    assert 'David' in names
+    assert 'Paul' in names
+    assert 'Chris' not in names
+    assert 'Nate' in names
+    assert 'Brysen' in names
+
 # ============ Expression Tests ============
 def test_exp_cmd() -> None:
     exp = Expression(field=User.age, operator='=', value=21)

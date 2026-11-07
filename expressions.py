@@ -5,6 +5,8 @@ if TYPE_CHECKING:
     from model import SQLStatement
     from fields import Field
 
+# Composite Pattern
+
 # to represent an expression
 class Expression(ABC):
     def __and__(self, other) -> Compound:

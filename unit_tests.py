@@ -591,6 +591,15 @@ def test_where(db) -> None:
     assert 'Nate' not in names
     assert 'Brysen' not in names
 
+def test_query_chaining(db) -> None:
+    User(id=1, name='Darin', age=21).save()
+    User(id=2, name='John', age=30).save()
+    User(id=3, name='Jane', age=18).save()
+
+    results = User.query().where(User.age > 20).order_by('age').limit(5).execute_all()
+    assert len(results) == 2
+    assert all(u.age > 20 for u in results)
+
 # ============ Comparison Tests ============
 def test_exp_cmd() -> None:
     exp = Comparison(field=User.age, operator='=', value=21)

@@ -3,6 +3,7 @@ import sqlite3
 
 from fields import Field, _MISSING
 from expressions import Comparison
+from query import Query
 
 type SQLStatement = tuple[str, tuple[Any, ...]]
 
@@ -217,3 +218,8 @@ class Model(metaclass=ModelMeta):
         cursor.execute(sql_cmd, values)
         rows = cursor.fetchall()
         return cls._get_instances(rows)
+
+    # entry point for chaining queries
+    @classmethod
+    def query(cls):
+        return Query(cls)

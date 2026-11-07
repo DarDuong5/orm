@@ -6,13 +6,17 @@ This is my implementation of an ORM (Object Relational Mapper) that allows custo
 
 ## Architecture
 
-The ORM is built using three layers:
+The ORM is built using five layers:
 
-**Fields (descriptors)**: Each field type (`IntegerField`, `StringField`) is a Python *descriptor* that manages a column's value on model instances -- validating the type and constraints (nullability, length) on an assignment and storing the value per-instance. Fields also carry SQL metadata (column type, primary key) used to generate the schema. 
+**Fields (descriptors)**: Each field type (`IntegerField`, `TextField`, `RealField`, `BooleanField`, `DateTimeField`) is a Python *descriptor* that manages a column's value on model instances -- validating the type and constraints (nullability, length) on an assignment and storing the value per-instance. Fields also carry SQL metadata (column type, primary key) used to generate the schema. 
 
 **Models (metaclasses)**: A metaclass (`ModelMeta`) runs when a model class is defined: it scans the class for field descriptors, collects them, derives the table name, and enforces that each model has exactly one primary key. This is what turns a plain class declaration into a database-mapped model. 
 
-**Persistence (methods)**: The `Model` base class provides the CRUD API (`save`, `get`, `get_all`, `update`, `delete`), and a SQL-generation layer that translates models into parameterized SQL statements, executed against SQLite.
+**Persistence (methods)**: The `Model` base class provides the CRUD API (`save`, `get`, `get_all`, `update`, `delete`), and a SQL-generation layer that translates models into parameterized SQL statements, executed against SQLite. 
+
+**Query Builder**: The `Expression` base class enables comparison and compound expressions through operator overloading. These expressions can be used as a single query (`where`) to filter results. Query chaining is also supported from the `Query` class (`query()` as entry point in `Model`) where multiple clauses are chained to build a single query (`where`, `order_by`, `limit`). The expression tree uses the **Composite pattern** and the query chaining uses the **Builder pattern**. 
+
+**Conversion Layer**: SQLite does not natively support some Python datatypes when storing in the database and retrieving them from the database. This is especially apparent for `BooleanField` and `DateTimeField`. The conversion was supported by defining instance methods in the `Field` class (`to_db`, `from_db`) to handle each field type.
 
 ## Usage
 Requires Python 3.14+. No dependencies are required.
@@ -25,7 +29,7 @@ import model
 
 Create your first model. In this case, I will make a pet model and go on from here. You can try with your own custom example.
 ```py
-class PetModel(model.Model):
+class Pet(model.Model):
     pet_id: int = fields.IntegerField(primary_key=True, nullable=False)
     name: str = fields.StringField(max_length=30, default='')
     animal: str = fields.StringField(max_length=20, nullable=False)
@@ -71,14 +75,30 @@ To delete the row.
 quaker.delete()
 ```
 
+To perform a comparison.
+```py
+parrots = Pet.where(Pet.animal == 'Parrot')
+```
+
+To perform compound conditions.
+```py
+quaker = Pet.where((Pet.name == 'Quaker') & (Pet.animal == 'Parrot'))
+```
+
+To build and chain queries.
+```py
+quakers = Pet.query().where(Pet.name == 'Quaker').order_by('id').limit(10).execute_all()
+```
+
 To run tests, run `pytest unit_tests.py`
 
 ## Project Structure
 ```
 fields.py # StringField and IntegerField are defined here.
 model.py # ModelMeta, Model, and its methods are defined here.
+expressions.py # Expression, Comparison, and Compound are defined here.
+query.py # Query builder is defined here.
 unit_tests.py # All tests of the current features goes here.
 ```
 
-**Note**: This is an ongoing personal project of mine, so more features will be added and `README.md` may be out of date. 
-
+MIT License.
